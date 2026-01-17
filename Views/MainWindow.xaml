@@ -245,6 +245,21 @@
 
                                 <CheckBox Content="Enable Idle Mining (Start after 1 min idle, Stop on activity)" 
                                           IsChecked="{Binding IsIdleMiningEnabled}"/>
+                                          
+                                <Grid Margin="0,10,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <CheckBox IsChecked="{Binding IsKeepAwakeEnabled}" Content="Enable Keep Awake (Prevent Sleep)" Grid.Column="0" VerticalAlignment="Center"/>
+                                    
+                                    <StackPanel Orientation="Horizontal" Grid.Column="2" IsEnabled="{Binding IsKeepAwakeEnabled}">
+                                        <TextBlock Text="Interval (s):" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBox Text="{Binding KeepAwakeInterval}" Width="50" VerticalAlignment="Center" HorizontalContentAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
                         </materialDesign:Card>
 
