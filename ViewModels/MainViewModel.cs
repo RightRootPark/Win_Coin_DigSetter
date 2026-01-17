@@ -109,11 +109,14 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void IdleTimer_Tick(object? sender, EventArgs e)
     {
-        // Always update idle time for display, even if disabled
+        if (!IsIdleMiningEnabled)
+        {
+            CurrentIdleSeconds = 0;
+            return;
+        }
+
         double idleSeconds = Services.IdleDetector.GetIdleTimeSeconds();
         CurrentIdleSeconds = idleSeconds;
-
-        if (!IsIdleMiningEnabled) return;
 
         // Thresholds
         const double StartThreshold = 60.0; // 1 minute
