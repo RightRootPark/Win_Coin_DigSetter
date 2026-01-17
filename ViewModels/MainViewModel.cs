@@ -404,7 +404,7 @@ public class MainViewModel : INotifyPropertyChanged
                     IsKeepAwakeEnabled = config.IsKeepAwakeEnabled;
                     KeepAwakeInterval = config.KeepAwakeInterval;
                     // Safety: Force Tray Start OFF due to visibility issues reported by user
-                    IsStartInTrayEnabled = false; // config.IsStartInTrayEnabled;
+                    IsStartInTrayEnabled = config.IsStartInTrayEnabled;
                     
                     return config;
                 }
@@ -424,6 +424,7 @@ public class MainViewModel : INotifyPropertyChanged
             Miners = new List<MinerConfig> { XmrigMiner.Config, RigelMiner.Config },
 
 
+            IsIdleMiningEnabled = IsIdleMiningEnabled,
             IsKeepAwakeEnabled = IsKeepAwakeEnabled,
             KeepAwakeInterval = KeepAwakeInterval,
             IsStartInTrayEnabled = IsStartInTrayEnabled
