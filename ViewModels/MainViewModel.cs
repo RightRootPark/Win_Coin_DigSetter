@@ -35,6 +35,37 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    // Keep Awake Settings
+    private bool _isKeepAwakeEnabled;
+    public bool IsKeepAwakeEnabled
+    {
+        get => _isKeepAwakeEnabled;
+        set { _isKeepAwakeEnabled = value; OnPropertyChanged(); }
+    }
+
+    private int _keepAwakeInterval = 60;
+    public int KeepAwakeInterval
+    {
+        get => _keepAwakeInterval;
+        set 
+        {
+            // Enforce minimum 5 seconds
+            int val = value < 5 ? 5 : value;
+            _keepAwakeInterval = val; 
+            OnPropertyChanged(); 
+        }
+    }
+
+    // Virtual Idle Logic State
+    private double _lastSystemIdleTime;
+    private double _virtualIdleAccumulator;
+    private bool _justJiggled;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, int dwExtraInfo);
+    
+    private const uint MOUSEEVENTF_MOVE = 0x0001;
+
     private double _currentIdleSeconds;
     public double CurrentIdleSeconds
     {
@@ -109,32 +140,90 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void IdleTimer_Tick(object? sender, EventArgs e)
     {
-        if (!IsIdleMiningEnabled)
+        if (!IsIdleMiningEnabled && !IsKeepAwakeEnabled)
         {
             CurrentIdleSeconds = 0;
+            _virtualIdleAccumulator = 0;
             return;
         }
 
-        double idleSeconds = Services.IdleDetector.GetIdleTimeSeconds();
-        CurrentIdleSeconds = idleSeconds;
+        double currentSystemIdle = Services.IdleDetector.GetIdleTimeSeconds();
 
-        // Thresholds
-        const double StartThreshold = 60.0; // 1 minute
-        const double StopThreshold = 1.0;   // 1 second (instant)
-
-        if (idleSeconds >= StartThreshold)
+        // 1. Detect Reset
+        if (currentSystemIdle < _lastSystemIdleTime)
         {
-             // Start if not running
-             if (XmrigMiner.Status == "Stopped" && XmrigMiner.Config.Enabled) XmrigMiner.StartCommand.Execute(null);
-             if (RigelMiner.Status == "Stopped" && RigelMiner.Config.Enabled) RigelMiner.StartCommand.Execute(null);
+            // System idle timer reset! Was it us?
+            if (_justJiggled)
+            {
+                // It was us! Preserve the time we had accumulated
+                _virtualIdleAccumulator += _lastSystemIdleTime;
+            }
+            else
+            {
+                // It was the user! Real reset.
+                _virtualIdleAccumulator = 0;
+            }
         }
-        else if (idleSeconds < StopThreshold)
+        
+        // 2. Clear Jiggle Flag (consumed)
+        _justJiggled = false;
+        
+        // 3. Update Last Idle
+        _lastSystemIdleTime = currentSystemIdle;
+
+        // 4. Calculate Total (Virtual) Idle Time
+        // The accumulator holds previous chunks of time that were interrupted by our jiggles.
+        // currentSystemIdle is the time since the LAST reset (which might be our jiggle).
+        CurrentIdleSeconds = currentSystemIdle + _virtualIdleAccumulator;
+
+        // --- Mining Logic ---
+        if (IsIdleMiningEnabled)
         {
-             // Stop if running
-             // Note: This stops even if user manually started it, IF idle mode is checked.
-             // This is consistent with "Check box... automatically stops when mouse moves".
-             if (XmrigMiner.Status == "Running") XmrigMiner.StopCommand.Execute(null);
-             if (RigelMiner.Status == "Running") RigelMiner.StopCommand.Execute(null);
+            const double StartThreshold = 60.0;
+            const double StopThreshold = 1.0;
+
+            if (CurrentIdleSeconds >= StartThreshold)
+            {
+                if (XmrigMiner.Status == "Stopped" && XmrigMiner.Config.Enabled) XmrigMiner.StartCommand.Execute(null);
+                if (RigelMiner.Status == "Stopped" && RigelMiner.Config.Enabled) RigelMiner.StartCommand.Execute(null);
+            }
+            else if (CurrentIdleSeconds < StopThreshold)
+            {
+                // Only stop if it's a REAL user action (accumulator is 0 means fresh start or user reset)
+                // Actually, if CurrentIdleSeconds < 1, it implies accumulator is 0 AND system idle is < 1.
+                if (XmrigMiner.Status == "Running") XmrigMiner.StopCommand.Execute(null);
+                if (RigelMiner.Status == "Running") RigelMiner.StopCommand.Execute(null);
+            }
+        }
+
+        // --- Keep Awake Logic ---
+        if (IsKeepAwakeEnabled)
+        {
+            // Jiggle every Interval seconds
+            // We use CurrentIdleSeconds to ensure we jiggle based on total inactivity
+            // But to avoid drift or double jiggling, we can check if (CurrentIdle % Interval) is small,
+            // OR simply keep track of 'last jiggle time'.
+            // Simpler approach: If system idle time is reaching the interval, jiggle.
+            
+            // However, since we reset system idle, we should check simply `currentSystemIdle`
+            // If we don't jiggle, system puts PC to sleep.
+            // So we must jiggle before system sleep timeout.
+            // User sets Interval. Let's strictly follow it.
+            
+            // To prevent integer precision issues with Modulo on doubles, we use a small epsilon window
+            // But simpler: just track time since last action? 
+            // Actually, we rely on the OS idle timer. We just need to ensure it never exceeds Interval.
+            
+            if (currentSystemIdle >= KeepAwakeInterval)
+            {
+                // Perform Jiggle
+                // Move 1 pixel right, then 1 pixel left (net zero visually, but counts as input)
+                mouse_event(MOUSEEVENTF_MOVE, 1, 0, 0, 0);
+                mouse_event(MOUSEEVENTF_MOVE, unchecked((uint)-1), 0, 0, 0);
+                
+                _justJiggled = true;
+                // Note: The NEXT tick, currentSystemIdle will be ~0. Logic above handles the accumulation.
+            }
         }
     }
 
@@ -297,11 +386,10 @@ public class MainViewModel : INotifyPropertyChanged
                 {
                     // Apply global settings
                     IsIdleMiningEnabled = config.IsIdleMiningEnabled;
-                    
-                    // Restore startup setting if it was enabled in config but missing in registry (or just sync)
-                    // Note: If config is false, we don't necessarily want to force disable it if user enabled it externally?
-                    // But for "Persistence", syncing to config is expected.
                     IsRunOnStartupEnabled = config.IsRunOnStartupEnabled;
+                    
+                    IsKeepAwakeEnabled = config.IsKeepAwakeEnabled;
+                    KeepAwakeInterval = config.KeepAwakeInterval;
                     
                     return config;
                 }
@@ -320,7 +408,9 @@ public class MainViewModel : INotifyPropertyChanged
         {
             Miners = new List<MinerConfig> { XmrigMiner.Config, RigelMiner.Config },
             IsIdleMiningEnabled = IsIdleMiningEnabled,
-            IsRunOnStartupEnabled = IsRunOnStartupEnabled
+            IsRunOnStartupEnabled = IsRunOnStartupEnabled,
+            IsKeepAwakeEnabled = IsKeepAwakeEnabled,
+            KeepAwakeInterval = KeepAwakeInterval
         };
 
         try

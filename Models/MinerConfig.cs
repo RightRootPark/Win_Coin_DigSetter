@@ -72,4 +72,6 @@ public class AppConfig
     public List<MinerConfig> Miners { get; set; } = new List<MinerConfig>();
     public bool IsIdleMiningEnabled { get; set; }
     public bool IsRunOnStartupEnabled { get; set; }
+    public bool IsKeepAwakeEnabled { get; set; }
+    public int KeepAwakeInterval { get; set; } = 300; // Default 5 minutes
 }
