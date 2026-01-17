@@ -24,12 +24,14 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        InitializeNotifyIcon();
         Loaded += MainWindow_Loaded;
     }
 
-    private void InitializeNotifyIcon()
+    private async void InitializeNotifyIcon()
     {
+        // Give the system shell some time to initialize if we are running at startup
+        await Task.Delay(3000); 
+
         _notifyIcon = new WinForms.NotifyIcon();
         _notifyIcon.Text = "Encryption Miner Control";
         _notifyIcon.Visible = false;
@@ -67,11 +69,17 @@ public partial class MainWindow : Window
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        InitializeNotifyIcon();
+
         if (DataContext is MainViewModel vm)
         {
             if (vm.IsStartInTrayEnabled)
             {
-                HideToTray();
+                // If starting in tray, we need to hide the window.
+                // However, Hide() might be called before NotifyIcon is ready because of the delay.
+                // Ideally, HideToTray should handle this sync/async.
+                // But for startup simplicity: Hide first, Icon appears later.
+                Hide();
             }
         }
     }
@@ -84,8 +92,11 @@ public partial class MainWindow : Window
     private void HideToTray()
     {
         Hide();
-        _notifyIcon.Visible = true;
-        _notifyIcon.ShowBalloonTip(3000, "Miner Control", "Running in background.", WinForms.ToolTipIcon.Info);
+        if (_notifyIcon != null)
+        {
+            _notifyIcon.Visible = true;
+            _notifyIcon.ShowBalloonTip(3000, "Miner Control", "Running in background.", WinForms.ToolTipIcon.Info);
+        }
     }
 
     private void ShowFromTray()
