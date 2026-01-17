@@ -1,0 +1,29 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+Dist/
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+
+# Miners (Binaries should not be committed)
+Miners/
+xmrig*/
+rigel*/
+*.zip
+
+# Settings (Personal config should not be committed)
+settings.json
+*.log
+Log/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

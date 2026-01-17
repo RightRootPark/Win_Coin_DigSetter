@@ -1,0 +1,206 @@
+﻿<Window x:Class="EncryptionMinerControl.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EncryptionMinerControl.Views"
+        xmlns:helpers="clr-namespace:EncryptionMinerControl.Helpers"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="600" Width="900">
+    <Grid TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+          TextElement.FontWeight="Regular"
+          TextElement.FontSize="13"
+          TextOptions.TextFormattingMode="Ideal"
+          TextOptions.TextRenderingMode="Auto"
+          Background="{DynamicResource MaterialDesignPaper}"
+          TextElement.FontFamily="{DynamicResource MaterialDesignFont}">
+        
+        <TabControl Style="{StaticResource MaterialDesignNavigationRailTabControl}" 
+                    TabStripPlacement="Left">
+            
+            <!-- DASHBOARD TAB -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Width="70">
+                        <materialDesign:PackIcon Kind="ViewDashboard" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Dashboard" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </TabItem.Header>
+                
+                <Grid Margin="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- XMRig Card -->
+                    <materialDesign:Card Grid.Column="0" Padding="10" UniformCornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+                                <materialDesign:PackIcon Kind="Cpu64Bit" Width="30" Height="30" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                <TextBlock Text="XMRig (CPU)" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <!-- Status -->
+                            <Border Grid.Row="1" Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Status: " FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding XmrigMiner.Status}" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Log Viewer -->
+                            <Border Grid.Row="2" Background="Black" CornerRadius="5" Padding="5" Margin="0,0,0,10">
+                                <ListBox ItemsSource="{Binding XmrigMiner.Logs}" Background="Transparent" BorderThickness="0" 
+                                         helpers:AutoScrollBehavior.AutoScroll="True"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#00FF00" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                            
+                            <!-- Controls -->
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Command="{Binding XmrigMiner.StartCommand}" Content="START" Margin="0,0,10,0" Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                <Button Command="{Binding XmrigMiner.StopCommand}" Content="STOP" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                    
+                    <!-- Rigel Card -->
+                    <materialDesign:Card Grid.Column="2" Padding="10" UniformCornerRadius="10">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+                                <materialDesign:PackIcon Kind="Gpu" Width="30" Height="30" VerticalAlignment="Center" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                <TextBlock Text="Rigel (GPU)" Style="{StaticResource MaterialDesignHeadline5TextBlock}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Status -->
+                            <Border Grid.Row="1" Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10" Margin="0,0,0,10">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="Status: " FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding RigelMiner.Status}" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Log Viewer -->
+                            <Border Grid.Row="2" Background="Black" CornerRadius="5" Padding="5" Margin="0,0,0,10">
+                                <ListBox ItemsSource="{Binding RigelMiner.Logs}" Background="Transparent" BorderThickness="0"
+                                         helpers:AutoScrollBehavior.AutoScroll="True"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding}" Foreground="#00BFFF" TextWrapping="Wrap"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+
+                            <!-- Controls -->
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Command="{Binding RigelMiner.StartCommand}" Content="START" Margin="0,0,10,0" Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                <Button Command="{Binding RigelMiner.StopCommand}" Content="STOP" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
+                            </StackPanel>
+                        </Grid>
+                    </materialDesign:Card>
+                </Grid>
+            </TabItem>
+            
+            <!-- SETTINGS TAB -->
+            <TabItem>
+                 <TabItem.Header>
+                    <StackPanel Width="70">
+                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Settings" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </TabItem.Header>
+                
+                <ScrollViewer>
+                    <StackPanel Margin="20" MaxWidth="800" HorizontalAlignment="Left">
+                        
+                        <!-- General Settings -->
+                        <materialDesign:Card Padding="20" Margin="0,0,0,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <materialDesign:PackIcon Kind="Tune" Width="24" Height="24" VerticalAlignment="Center"/>
+                                    <TextBlock Text="General Settings" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="10,0,0,0"/>
+                                </StackPanel>
+
+                                <CheckBox Content="Run on Windows Startup" 
+                                          IsChecked="{Binding IsRunOnStartupEnabled}"
+                                          Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Enable Idle Mining (Start after 1 min idle, Stop on activity)" 
+                                          IsChecked="{Binding IsIdleMiningEnabled}"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                            <TextBlock Text="Configuration" Style="{StaticResource MaterialDesignHeadline4TextBlock}" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                            <Button Command="{Binding AutoConfigCommand}" Content="AUTO DETECT &amp; CONFIGURE" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                        </StackPanel>
+                        
+                        <!-- XMRig Settings -->
+                        <materialDesign:Card Padding="20" Margin="0,0,0,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <materialDesign:PackIcon Kind="Cpu64Bit" Width="24" Height="24" VerticalAlignment="Center"/>
+                                    <TextBlock Text="XMRig Settings" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="10,0,0,0"/>
+                                </StackPanel>
+                                
+                                <TextBox Text="{Binding XmrigMiner.Config.ExecutablePath}" materialDesign:HintAssist.Hint="Executable Path (e.g. C:\miners\xmrig.exe)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding XmrigMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (Optional, e.g. rx/0)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding XmrigMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding XmrigMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding XmrigMiner.Config.ExtraArguments}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                            </StackPanel>
+                        </materialDesign:Card>
+                        
+                        <!-- Rigel Settings -->
+                        <materialDesign:Card Padding="20" Margin="0,0,0,20">
+                             <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <materialDesign:PackIcon Kind="Gpu" Width="24" Height="24" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Rigel Settings" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="10,0,0,0"/>
+                                </StackPanel>
+
+                                <TextBox Text="{Binding RigelMiner.Config.ExecutablePath}" materialDesign:HintAssist.Hint="Executable Path (e.g. C:\miners\rigel.exe)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding RigelMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (e.g. alephium)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding RigelMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding RigelMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding RigelMiner.Config.ExtraArguments}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                             </StackPanel>
+                        </materialDesign:Card>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                            <Button Command="{Binding SaveConfigCommand}" Content="SAVE SETTINGS" Width="150" Margin="0,0,20,0"/>
+                            <Button Command="{Binding AutoConfigCommand}" Content="AUTO DETECT" Style="{StaticResource MaterialDesignOutlinedButton}" Width="150" Margin="0,0,20,0"/>
+                            <Button Command="{Binding ResetConfigCommand}" Content="RESET TO BATCH" Style="{StaticResource MaterialDesignOutlinedButton}" BorderBrush="OrangeRed" Foreground="OrangeRed"/>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Window>
