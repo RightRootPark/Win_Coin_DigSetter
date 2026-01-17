@@ -290,6 +290,8 @@
                                     <TextBlock Text="XMRig Settings" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="10,0,0,0"/>
                                 </StackPanel>
                                 
+                                <CheckBox Content="Enable XMRig Miner" IsChecked="{Binding XmrigMiner.Config.Enabled}" Margin="0,0,0,10"/>
+                                
                                 <TextBox Text="{Binding XmrigMiner.Config.ExecutablePath}" materialDesign:HintAssist.Hint="Executable Path (e.g. C:\miners\xmrig.exe)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding XmrigMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (Optional, e.g. rx/0)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding XmrigMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
@@ -305,6 +307,8 @@
                                     <materialDesign:PackIcon Kind="Gpu" Width="24" Height="24" VerticalAlignment="Center"/>
                                     <TextBlock Text="Rigel Settings" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="10,0,0,0"/>
                                 </StackPanel>
+
+                                <CheckBox Content="Enable Rigel Miner" IsChecked="{Binding RigelMiner.Config.Enabled}" Margin="0,0,0,10"/>
 
                                 <TextBox Text="{Binding RigelMiner.Config.ExecutablePath}" materialDesign:HintAssist.Hint="Executable Path (e.g. C:\miners\rigel.exe)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding RigelMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (e.g. alephium)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>

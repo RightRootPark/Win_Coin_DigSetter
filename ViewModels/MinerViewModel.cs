@@ -55,7 +55,7 @@ public class MinerViewModel : INotifyPropertyChanged
         Config = config;
         _processManager = new ProcessManager(OnLogReceived);
 
-        StartCommand = new RelayCommand(_ => Start(), _ => !_processManager.IsRunning);
+        StartCommand = new RelayCommand(_ => Start(), _ => !_processManager.IsRunning && Config.Enabled);
         StopCommand = new RelayCommand(_ => Stop(), _ => _processManager.IsRunning);
     }
 
