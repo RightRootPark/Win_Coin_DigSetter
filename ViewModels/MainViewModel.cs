@@ -35,6 +35,15 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private double _currentIdleSeconds;
+    public double CurrentIdleSeconds
+    {
+        get => _currentIdleSeconds;
+        set { _currentIdleSeconds = value; OnPropertyChanged(); OnPropertyChanged(nameof(IdleProgress)); }
+    }
+
+    public double IdleProgress => Math.Min((CurrentIdleSeconds / 60.0) * 100, 100);
+
     public bool IsRunOnStartupEnabled
     {
         get
@@ -100,9 +109,11 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void IdleTimer_Tick(object? sender, EventArgs e)
     {
-        if (!IsIdleMiningEnabled) return;
-
+        // Always update idle time for display, even if disabled
         double idleSeconds = Services.IdleDetector.GetIdleTimeSeconds();
+        CurrentIdleSeconds = idleSeconds;
+
+        if (!IsIdleMiningEnabled) return;
 
         // Thresholds
         const double StartThreshold = 60.0; // 1 minute
