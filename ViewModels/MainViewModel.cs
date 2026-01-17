@@ -101,43 +101,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsRunOnStartupEnabled
-    {
-        get
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", false);
-                return key?.GetValue("EncryptionMinerControl") != null;
-            }
-            catch { return false; }
-        }
-        set
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run", true);
-                if (key == null) return;
 
-                if (value)
-                {
-                    string path = Environment.ProcessPath ?? "";
-                    if (!string.IsNullOrEmpty(path))
-                        key.SetValue("EncryptionMinerControl", path);
-                }
-                else
-                {
-                    if (key.GetValue("EncryptionMinerControl") != null)
-                        key.DeleteValue("EncryptionMinerControl");
-                }
-                OnPropertyChanged();
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Failed to change startup setting: {ex.Message}");
-            }
-        }
-    }
 
     public MainViewModel()
     {
@@ -435,7 +399,7 @@ public class MainViewModel : INotifyPropertyChanged
                 {
                     // Apply global settings
                     IsIdleMiningEnabled = config.IsIdleMiningEnabled;
-                    IsRunOnStartupEnabled = config.IsRunOnStartupEnabled;
+
                     
                     IsKeepAwakeEnabled = config.IsKeepAwakeEnabled;
                     KeepAwakeInterval = config.KeepAwakeInterval;
@@ -457,8 +421,8 @@ public class MainViewModel : INotifyPropertyChanged
         var config = new AppConfig
         {
             Miners = new List<MinerConfig> { XmrigMiner.Config, RigelMiner.Config },
-            IsIdleMiningEnabled = IsIdleMiningEnabled,
-            IsRunOnStartupEnabled = IsRunOnStartupEnabled,
+
+
             IsKeepAwakeEnabled = IsKeepAwakeEnabled,
             KeepAwakeInterval = KeepAwakeInterval,
             IsStartInTrayEnabled = IsStartInTrayEnabled

@@ -249,10 +249,6 @@
                                     <TextBlock Text="General Settings" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="10,0,0,0"/>
                                 </StackPanel>
 
-                                <CheckBox Content="Run on Windows Startup" 
-                                          IsChecked="{Binding IsRunOnStartupEnabled}"
-                                          Margin="0,0,0,10"/>
-
                                 <CheckBox Content="Start in System Tray" 
                                           IsChecked="{Binding IsStartInTrayEnabled}"
                                           Margin="0,0,0,10"/>

@@ -27,11 +27,8 @@ public partial class MainWindow : Window
         Loaded += MainWindow_Loaded;
     }
 
-    private async void InitializeNotifyIcon()
+    private void InitializeNotifyIcon()
     {
-        // Give the system shell some time to initialize if we are running at startup
-        await Task.Delay(3000); 
-
         _notifyIcon = new WinForms.NotifyIcon();
         _notifyIcon.Text = "Encryption Miner Control";
         _notifyIcon.Visible = false;
