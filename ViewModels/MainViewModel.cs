@@ -75,6 +75,25 @@ public class MainViewModel : INotifyPropertyChanged
 
     public double IdleProgress => Math.Min((CurrentIdleSeconds / 60.0) * 100, 100);
 
+    // Keep Awake Visualization
+    private double _timeUntilNextJiggle;
+    public double TimeUntilNextJiggle
+    {
+        get => _timeUntilNextJiggle;
+        set { _timeUntilNextJiggle = value; OnPropertyChanged(); OnPropertyChanged(nameof(KeepAwakeProgress)); }
+    }
+    
+    public double KeepAwakeProgress 
+    {
+        get 
+        {
+            if (KeepAwakeInterval <= 0) return 0;
+            // Progress goes from 0 to 100 as time approaches interval
+            double elapsed = KeepAwakeInterval - TimeUntilNextJiggle;
+            return Math.Min((elapsed / KeepAwakeInterval) * 100, 100);
+        }
+    }
+
     public bool IsRunOnStartupEnabled
     {
         get
@@ -224,6 +243,15 @@ public class MainViewModel : INotifyPropertyChanged
                 _justJiggled = true;
                 // Note: The NEXT tick, currentSystemIdle will be ~0. Logic above handles the accumulation.
             }
+            
+            // Visualization Update
+            double timeRemaining = KeepAwakeInterval - currentSystemIdle;
+            if (timeRemaining < 0) timeRemaining = 0;
+            TimeUntilNextJiggle = timeRemaining;
+        }
+        else
+        {
+             TimeUntilNextJiggle = 0;
         }
     }
 
