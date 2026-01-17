@@ -4,7 +4,7 @@ using EncryptionMinerControl.ViewModels;
 
 namespace EncryptionMinerControl;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private MainViewModel? _mainViewModel;
 

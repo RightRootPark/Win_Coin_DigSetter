@@ -33,6 +33,16 @@
                 
                 <Grid Margin="15">
                     <StackPanel MaxWidth="800">
+                        <!-- Dashboard Header -->
+                        <Grid Margin="0,0,0,15">
+                            <TextBlock Text="Dashboard" Style="{StaticResource MaterialDesignHeadline4TextBlock}" VerticalAlignment="Center"/>
+                            <Button Content="Hide to Tray" 
+                                    HorizontalAlignment="Right" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    x:Name="BtnHideToTray" Click="BtnHideToTray_Click"
+                                    ToolTip="Minimizes the application to the system tray"/>
+                        </Grid>
+
                         <!-- Summary Cards -->
                         <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
@@ -241,6 +251,10 @@
 
                                 <CheckBox Content="Run on Windows Startup" 
                                           IsChecked="{Binding IsRunOnStartupEnabled}"
+                                          Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Start in System Tray" 
+                                          IsChecked="{Binding IsStartInTrayEnabled}"
                                           Margin="0,0,0,10"/>
 
                                 <CheckBox Content="Enable Idle Mining (Start after 1 min idle, Stop on activity)" 

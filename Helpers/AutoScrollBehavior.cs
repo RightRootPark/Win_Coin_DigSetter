@@ -21,7 +21,7 @@ public static class AutoScrollBehavior
 
     private static void OnAutoScrollChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is ListBox listBox)
+        if (d is System.Windows.Controls.ListBox listBox)
         {
             if ((bool)e.NewValue)
             {
@@ -38,7 +38,7 @@ public static class AutoScrollBehavior
 
     private static void ListBox_Loaded(object sender, RoutedEventArgs e)
     {
-        var listBox = (ListBox)sender;
+        var listBox = (System.Windows.Controls.ListBox)sender;
         ((INotifyCollectionChanged)listBox.Items).CollectionChanged += (s, args) =>
         {
             if (args.Action == NotifyCollectionChangedAction.Add)

@@ -43,6 +43,13 @@ public class MainViewModel : INotifyPropertyChanged
         set { _isKeepAwakeEnabled = value; OnPropertyChanged(); }
     }
 
+    private bool _isStartInTrayEnabled;
+    public bool IsStartInTrayEnabled
+    {
+        get => _isStartInTrayEnabled;
+        set { _isStartInTrayEnabled = value; OnPropertyChanged(); }
+    }
+
     private int _keepAwakeInterval = 60;
     public int KeepAwakeInterval
     {
@@ -127,7 +134,7 @@ public class MainViewModel : INotifyPropertyChanged
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to change startup setting: {ex.Message}");
+                System.Windows.MessageBox.Show($"Failed to change startup setting: {ex.Message}");
             }
         }
     }
@@ -359,12 +366,12 @@ public class MainViewModel : INotifyPropertyChanged
                 }
             }
             
-            MessageBox.Show($"Auto-configuration completed!\nWallet Updated: Yes\nCPU Hint: {threads} threads");
+            System.Windows.MessageBox.Show($"Auto-configuration completed!\nWallet Updated: Yes\nCPU Hint: {threads} threads");
             SaveConfig(); // Save updates
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Auto-configuration failed: {ex.Message}");
+            System.Windows.MessageBox.Show($"Auto-configuration failed: {ex.Message}");
         }
     }
 
@@ -393,12 +400,12 @@ public class MainViewModel : INotifyPropertyChanged
                     RigelMiner.Config.WalletAddress = ExtractArg(content, "-u") ?? RigelMiner.Config.WalletAddress;
                 }
             }
-            MessageBox.Show("Settings reset from found batch files.");
+            System.Windows.MessageBox.Show("Settings reset from found batch files.");
             SaveConfig();
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to reset settings: {ex.Message}");
+            System.Windows.MessageBox.Show($"Failed to reset settings: {ex.Message}");
         }
     }
 
@@ -432,13 +439,14 @@ public class MainViewModel : INotifyPropertyChanged
                     
                     IsKeepAwakeEnabled = config.IsKeepAwakeEnabled;
                     KeepAwakeInterval = config.KeepAwakeInterval;
+                    IsStartInTrayEnabled = config.IsStartInTrayEnabled;
                     
                     return config;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to load settings: {ex.Message}");
+                System.Windows.MessageBox.Show($"Failed to load settings: {ex.Message}");
             }
         }
         return new AppConfig();
@@ -452,7 +460,8 @@ public class MainViewModel : INotifyPropertyChanged
             IsIdleMiningEnabled = IsIdleMiningEnabled,
             IsRunOnStartupEnabled = IsRunOnStartupEnabled,
             IsKeepAwakeEnabled = IsKeepAwakeEnabled,
-            KeepAwakeInterval = KeepAwakeInterval
+            KeepAwakeInterval = KeepAwakeInterval,
+            IsStartInTrayEnabled = IsStartInTrayEnabled
         };
 
         try
@@ -462,7 +471,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to save settings: {ex.Message}");
+            System.Windows.MessageBox.Show($"Failed to save settings: {ex.Message}");
         }
     }
 
