@@ -293,7 +293,18 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 string json = File.ReadAllText(ConfigFile);
                 var config = JsonSerializer.Deserialize<AppConfig>(json);
-                if (config != null) return config;
+                if (config != null)
+                {
+                    // Apply global settings
+                    IsIdleMiningEnabled = config.IsIdleMiningEnabled;
+                    
+                    // Restore startup setting if it was enabled in config but missing in registry (or just sync)
+                    // Note: If config is false, we don't necessarily want to force disable it if user enabled it externally?
+                    // But for "Persistence", syncing to config is expected.
+                    IsRunOnStartupEnabled = config.IsRunOnStartupEnabled;
+                    
+                    return config;
+                }
             }
             catch (Exception ex)
             {
@@ -307,7 +318,9 @@ public class MainViewModel : INotifyPropertyChanged
     {
         var config = new AppConfig
         {
-            Miners = new List<MinerConfig> { XmrigMiner.Config, RigelMiner.Config }
+            Miners = new List<MinerConfig> { XmrigMiner.Config, RigelMiner.Config },
+            IsIdleMiningEnabled = IsIdleMiningEnabled,
+            IsRunOnStartupEnabled = IsRunOnStartupEnabled
         };
 
         try

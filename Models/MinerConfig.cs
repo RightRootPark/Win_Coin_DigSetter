@@ -70,4 +70,6 @@ public class MinerConfig : INotifyPropertyChanged
 public class AppConfig
 {
     public List<MinerConfig> Miners { get; set; } = new List<MinerConfig>();
+    public bool IsIdleMiningEnabled { get; set; }
+    public bool IsRunOnStartupEnabled { get; set; }
 }
