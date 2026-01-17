@@ -109,3 +109,28 @@
 
 ---
 Developed with ❤️ by **RightRootPark** & **Antigravity AI**
+
+---
+
+## 🤖 Continuing Development with Antigravity AI
+
+If you want to continue developing this project using **Google DeepMind's Antigravity AI**, follow these steps:
+
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/RightRootPark/Win_Coin_DigSetter.git
+    ```
+2.  **Locate Context**:
+    Inside the project, you will find a `Docs` folder containing:
+    - `task.md`: The status of all tasks and to-do list.
+    - `implementation_plan.md`: Technical design and architectural decisions.
+    - `walkthrough.md`: Verification steps and recent changes.
+
+3.  **Prompt the Agent**:
+    When you start a new session with Antigravity, give it the following instruction:
+    > "Please read the `Docs/task.md` file to understand the current project status and continue working from there."
+
+    The agent will analyze the provided documentation and seamlessly resume work where it left off, maintaining full context of the project's history and logic.
+
+---
+
