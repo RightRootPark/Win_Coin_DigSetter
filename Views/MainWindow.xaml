@@ -31,80 +31,80 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <Grid Margin="30">
+                <Grid Margin="15">
                     <StackPanel MaxWidth="800">
                         <!-- Summary Cards -->
-                        <Grid Margin="0,0,0,30">
+                        <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="30"/>
+                                <ColumnDefinition Width="15"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <!-- XMRig Status Card -->
-                            <materialDesign:Card Grid.Column="0" Padding="20" UniformCornerRadius="15">
+                            <materialDesign:Card Grid.Column="0" Padding="15" UniformCornerRadius="10">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Cpu64Bit" Width="60" Height="60" Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,10"/>
-                                    <TextBlock Text="XMRig (CPU)" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                    <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="10" Padding="15,5">
-                                        <TextBlock Text="{Binding XmrigMiner.Status}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                    <materialDesign:PackIcon Kind="Cpu64Bit" Width="50" Height="50" Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,5"/>
+                                    <TextBlock Text="XMRig (CPU)" Style="{StaticResource MaterialDesignHeadline6TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                    <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10,2">
+                                        <TextBlock Text="{Binding XmrigMiner.Status}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
                                     </Border>
                                 </StackPanel>
                             </materialDesign:Card>
 
                             <!-- Rigel Status Card -->
-                            <materialDesign:Card Grid.Column="2" Padding="20" UniformCornerRadius="15">
+                            <materialDesign:Card Grid.Column="2" Padding="15" UniformCornerRadius="10">
                                 <StackPanel HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Gpu" Width="60" Height="60" Foreground="{DynamicResource SecondaryHueMidBrush}" Margin="0,0,0,10"/>
-                                    <TextBlock Text="Rigel (GPU)" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                    <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="10" Padding="15,5">
-                                        <TextBlock Text="{Binding RigelMiner.Status}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                    <materialDesign:PackIcon Kind="Gpu" Width="50" Height="50" Foreground="{DynamicResource SecondaryHueMidBrush}" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Rigel (GPU)" Style="{StaticResource MaterialDesignHeadline6TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                    <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10,2">
+                                        <TextBlock Text="{Binding RigelMiner.Status}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
                                     </Border>
                                 </StackPanel>
                             </materialDesign:Card>
                         </Grid>
 
                         <!-- Idle Monitor Section -->
-                        <materialDesign:Card Padding="30" UniformCornerRadius="10" Margin="0,0,0,30">
+                        <materialDesign:Card Padding="20" UniformCornerRadius="10" Margin="0,0,0,15">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                                    <materialDesign:PackIcon Kind="TimerSand" Width="30" Height="30" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Idle Monitor (For Mining)" Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <materialDesign:PackIcon Kind="TimerSand" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Idle Monitor (For Mining)" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
                                 </StackPanel>
                                 
-                                <Grid Margin="0,0,0,10">
-                                    <TextBlock Text="Time until Idle Mining Starts" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding CurrentIdleSeconds, StringFormat={}{0:F0}s / 60s}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold"/>
+                                <Grid Margin="0,0,0,5">
+                                    <TextBlock Text="Time until Idle Mining Starts" VerticalAlignment="Center" FontSize="12"/>
+                                    <TextBlock Text="{Binding CurrentIdleSeconds, StringFormat={}{0:F0}s / 60s}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
                                 </Grid>
                                 
-                                <ProgressBar Value="{Binding IdleProgress, Mode=OneWay}" Height="20" Foreground="{DynamicResource SecondaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
+                                <ProgressBar Value="{Binding IdleProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource SecondaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
                                 
                                 <TextBlock Text="* Mining starts automatically when the bar is full (no activity for 1 min)." 
-                                           Margin="0,10,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center"/>
+                                           Margin="0,5,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center" FontSize="11"/>
                             </StackPanel>
                         </materialDesign:Card>
 
                         <!-- Keep Awake Monitor Section -->
-                        <materialDesign:Card Padding="30" UniformCornerRadius="10" Visibility="{Binding IsKeepAwakeEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <materialDesign:Card Padding="20" UniformCornerRadius="10" Visibility="{Binding IsKeepAwakeEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                                    <materialDesign:PackIcon Kind="Mouse" Width="30" Height="30" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Keep Awake Monitor" Style="{StaticResource MaterialDesignHeadline5TextBlock}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <materialDesign:PackIcon Kind="Mouse" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Keep Awake Monitor" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
                                 </StackPanel>
 
-                                <Grid Margin="0,0,0,10">
-                                    <TextBlock Text="Next Mouse Jiggle In" VerticalAlignment="Center"/>
+                                <Grid Margin="0,0,0,5">
+                                    <TextBlock Text="Next Mouse Jiggle In" VerticalAlignment="Center" FontSize="12"/>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding TimeUntilNextJiggle, StringFormat={}{0:F0}s}" FontWeight="Bold"/>
-                                        <TextBlock Text=" / "/>
-                                        <TextBlock Text="{Binding KeepAwakeInterval, StringFormat={}{0}s}" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding TimeUntilNextJiggle, StringFormat={}{0:F0}s}" FontWeight="Bold" FontSize="12"/>
+                                        <TextBlock Text=" / " FontSize="12"/>
+                                        <TextBlock Text="{Binding KeepAwakeInterval, StringFormat={}{0}s}" FontWeight="Bold" FontSize="12"/>
                                     </StackPanel>
                                 </Grid>
 
-                                <ProgressBar Value="{Binding KeepAwakeProgress, Mode=OneWay}" Height="20" Foreground="{DynamicResource PrimaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
+                                <ProgressBar Value="{Binding KeepAwakeProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource PrimaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
 
                                 <TextBlock Text="* Prevents sleep mode by simulating mouse movement." 
-                                           Margin="0,10,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center"/>
+                                           Margin="0,5,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center" FontSize="11"/>
                             </StackPanel>
                         </materialDesign:Card>
                     </StackPanel>

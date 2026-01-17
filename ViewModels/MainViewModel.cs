@@ -235,13 +235,27 @@ public class MainViewModel : INotifyPropertyChanged
             
             if (currentSystemIdle >= KeepAwakeInterval)
             {
-                // Perform Jiggle
-                // Move 1 pixel right, then 1 pixel left (net zero visually, but counts as input)
-                mouse_event(MOUSEEVENTF_MOVE, 1, 0, 0, 0);
-                mouse_event(MOUSEEVENTF_MOVE, unchecked((uint)-1), 0, 0, 0);
-                
+                // Perform Jiggle - Make it visible as requested
                 _justJiggled = true;
-                // Note: The NEXT tick, currentSystemIdle will be ~0. Logic above handles the accumulation.
+                
+                // Run on background thread to avoid blocking UI during delay
+                Task.Run(async () => 
+                {
+                    try
+                    {
+                        // Move 5 pixels right
+                        mouse_event(MOUSEEVENTF_MOVE, 5, 0, 0, 0);
+                        // Wait 50ms (visible twitch)
+                        await Task.Delay(50);
+                        // Move back
+                        mouse_event(MOUSEEVENTF_MOVE, unchecked((uint)-5), 0, 0, 0);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Ignore any errors in background task
+                        System.Diagnostics.Debug.WriteLine($"Jiggle failed: {ex.Message}");
+                    }
+                });
             }
             
             // Visualization Update
