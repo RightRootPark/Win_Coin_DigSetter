@@ -134,3 +134,25 @@ If you want to continue developing this project using **Google DeepMind's Antigr
 
 ---
 
+## 🤖 안티그래비티 AI로 개발 이어서 하기 (Korean)
+
+이 프로젝트를 **Google DeepMind의 안티그래비티 AI(Antigravity AI)**를 사용하여 계속 개발하려면 다음 단계를 따르세요:
+
+1.  **리포지토리 복제 (Clone)**:
+    ```bash
+    git clone https://github.com/RightRootPark/Win_Coin_DigSetter.git
+    ```
+2.  **컨텍스트 파일 확인**:
+    프로젝트 폴더 내의 `Docs` 폴더에 다음 파일들이 준비되어 있습니다:
+    - `task.md`: 현재 작업 진행 상황 및 할 일 목록.
+    - `implementation_plan.md`: 기술 설계 및 아키텍처 결정 사항.
+    - `walkthrough.md`: 검증 내역 및 최근 변경 사항.
+
+3.  **에이전트에게 지시하기**:
+    안티그래비티와 새 세션을 시작할 때, 다음과 같이 지시하세요:
+    > "Docs/task.md 파일을 읽고 현재 프로젝트 상태를 파악한 뒤, 작업을 이어서 진행해줘."
+
+    에이전트가 제공된 문서를 분석하고, 프로젝트의 역사와 로직에 대한 완전한 맥락을 유지하면서 중단된 부분부터 원활하게 작업을 재개할 것입니다.
+
+---
+
