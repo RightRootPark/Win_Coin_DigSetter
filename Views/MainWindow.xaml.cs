@@ -44,23 +44,26 @@ public partial class MainWindow : Window
         });
         _notifyIcon.ContextMenuStrip = contextMenu;
 
-        // Icon Loading
+        // Icon Loading - Robust Logic
         try
         {
-            if (System.IO.File.Exists("icon.png"))
+            // 1. Try generic application icon first as safe default
+            _notifyIcon.Icon = System.Drawing.SystemIcons.Application;
+
+            // 2. Try loading custom icon from execution directory
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string iconPath = System.IO.Path.Combine(baseDir, "icon.png");
+
+            if (System.IO.File.Exists(iconPath))
             {
-                using var bitmap = new System.Drawing.Bitmap("icon.png");
-                // Note: The handle created here should be managed properly in a real production scenario
+                using var bitmap = new System.Drawing.Bitmap(iconPath);
                 _notifyIcon.Icon = System.Drawing.Icon.FromHandle(bitmap.GetHicon());
             }
-            else
-            {
-                _notifyIcon.Icon = System.Drawing.SystemIcons.Application;
-            }
         }
-        catch
+        catch (Exception ex)
         {
-            _notifyIcon.Icon = System.Drawing.SystemIcons.Application;
+            // Fallback is already set to SystemIcons.Application
+            System.Diagnostics.Debug.WriteLine($"Icon load failed: {ex.Message}");
         }
     }
 
@@ -70,13 +73,10 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel vm)
         {
-            if (vm.IsStartInTrayEnabled)
+            // Safety Check: If icon failed to initialize properly (null icon handle), don't hide window
+            if (vm.IsStartInTrayEnabled && _notifyIcon.Icon != null)
             {
-                // If starting in tray, we need to hide the window.
-                // However, Hide() might be called before NotifyIcon is ready because of the delay.
-                // Ideally, HideToTray should handle this sync/async.
-                // But for startup simplicity: Hide first, Icon appears later.
-                Hide();
+                HideToTray();
             }
         }
     }

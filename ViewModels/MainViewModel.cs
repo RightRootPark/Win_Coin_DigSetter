@@ -403,7 +403,8 @@ public class MainViewModel : INotifyPropertyChanged
                     
                     IsKeepAwakeEnabled = config.IsKeepAwakeEnabled;
                     KeepAwakeInterval = config.KeepAwakeInterval;
-                    IsStartInTrayEnabled = config.IsStartInTrayEnabled;
+                    // Safety: Force Tray Start OFF due to visibility issues reported by user
+                    IsStartInTrayEnabled = false; // config.IsStartInTrayEnabled;
                     
                     return config;
                 }
