@@ -334,6 +334,14 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    public void Cleanup()
+    {
+        _idleTimer.Stop();
+        
+        if (XmrigMiner.Status == "Running") XmrigMiner.StopCommand.Execute(null);
+        if (RigelMiner.Status == "Running") RigelMiner.StopCommand.Execute(null);
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
     {
