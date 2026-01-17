@@ -1,0 +1,75 @@
+# 채굴기 제어 UI 작업 목록
+
+- [x] 채굴기 제어 메커니즘 조사 <!-- id: 0 -->
+    - [x] XMRig API 및 CLI 옵션 조사
+    - [x] Rigel Miner API 및 CLI 옵션 조사
+- [x] 설계 및 계획 <!-- id: 1 -->
+    - [x] 구현 계획서 보강 (상세 설정 및 실시간 로그 뷰어 추가)
+- [x] 구현 <!-- id: 2 -->
+    - [x] WPF 프로젝트 및 MVVM 구조 생성
+    - [x] UI 라이브러리 추가 (MaterialDesignThemes)
+    - [x] UI 디자인: 상세 설정 윈도우 (탭 컨트롤, 파라미터 빌더)
+    - [x] UI 디자인: 메인 대시보드 & 로그 뷰어 (RichTextBox 등 활용)
+    - [x] 백엔드: ProcessService (로그 리다이렉션 구현 필수)
+    - [x] 백엔드: 설정 저장/로드 로직 (JSON)
+- [x] 설정 마이그레이션 <!-- id: 4 -->
+    - [x] 배치 파일 내용 파싱 (XMRig, Rigel)
+    - [x] settings.json 파일 생성 및 업데이트
+- [x] 편의 기능 추가 <!-- id: 5 -->
+    - [x] 마이너 바이너리 자동 다운로드 (PowerShell 스크립트)
+    - [x] 하드웨어 감지 및 자동 설정(Auto-Config) 버튼 구현
+- [x] 고급 기능 및 수정 <!-- id: 6 -->
+    - [x] Auto-Config: Wallet Address에 컴퓨터 이름 추가
+    - [x] UI: 로그 뷰어 자동 스크롤(Auto-Scroll) 구현
+    - [x] Idle Mining: 마우스 움직임 감지 및 자동 시작/정지 (Win32 API)
+    - [x] 디버깅: Auto-Config UI 미갱신 문제 해결 (INotifyPropertyChanged)
+- [x] UI 리팩토링 및 윈도우 설정 <!-- id: 8 -->
+    - [x] UI: Idle Mining 체크박스 설정 탭으로 이동
+    - [x] 기능: 윈도우 시작 시 자동 실행 (Registry HKCU Run)
+- [x] 추가 수정 요청 <!-- id: 9 -->
+    - [x] 기능: 배치 파일 설정으로 초기화 버튼 추가 (Reset to Batch)
+    - [x] Auto-Config: 지갑 주소 포맷 변경 (`.{MachineName}_{Core}`)
+- [x] 배포 및 검증 <!-- id: 7 -->
+    - [x] 배포용 빌드 생성 (Self-Contained) <!-- id: 3 -->
+    - [x] 배포 폴더 패키징 (Dist 폴더 생성)
+- [x] GitHub 업로드 준비 <!-- id: 10 -->
+    - [x] .gitignore 생성
+    - [x] GitHub 연동 및 업로드
+- [x] UI 구조 변경 (Dashboard/Monitoring 분리) <!-- id: 11 -->
+    - [x] 탭 구조 변경: Dashboard, Monitoring, Settings
+    - [x] New Dashboard: 상태 요약 및 Idle Timer Progress Bar 구현
+    - [x] Monitoring: 제어 및 로그 기능 이동
+    - [x] 실행 오류 해결 (Binding Mode 수정)
+- [x] 최적화 <!-- id: 12 -->
+    - [x] Idle Timer 비활성화 시 카운팅 중지 및 리소스 절약
+    - [x] 설정 저장 시 체크박스 상태 (Idle/Startup) 영구 보존
+- [x] 종료 처리 <!-- id: 13 -->
+    - [x] 프로그램 종료 시 실행 중인 채굴기(XMRig/Rigel) 강제 종료
+- [x] 편의 기능 추가 2 <!-- id: 14 -->
+    - [x] 절전 방지(Keep Awake) 기능 추가 (Mouse Jiggler)
+    - [x] 설정: 활성화 체크박스, 간격 입력(최소 5초, 유효성 검사)
+    - [x] 로직: 채굴기 Idle Timer에 영향 주지 않도록 예외 처리 (Virtual Idle Time)
+- [x] 문서화 <!-- id: 15 -->
+    - [x] README.md 작성 (영문/한글) 및 GitHub 업로드
+- [x] 시각화 <!-- id: 16 -->
+    - [x] Dashboard : Keep Awake 타이머(다음 움직임까지 남은 시간) 시각화 (ProgressBar)
+    - [x] UI Polish : Dashboard 요소 간격 축소 (Compact Layout)
+    - [x] Tuning : Keep Awake 움직임 가시성 향상 (1px -> 5px, 0ms -> 50ms delay)
+- [x] 시스템 트레이 <!-- id: 17 -->
+    - [x] 아이콘 생성 (광산 곡괭이/암호화폐 테마)
+    - [x] 기능: 트레이로 시작하기 (Start in Tray) 설정 추가
+    - [x] UI: 대시보드에 'Hide to Tray' 버튼 추가
+    - [x] 구현: WinForms NotifyIcon 연동 및 최소화/복구 로직
+- [x] 개별 마이너 설정 <!-- id: 18 -->
+    - [x] Settings UI: 각 마이너(XMRig, Rigel) 카드에 'Enable' 체크박스 추가
+    - [x] Logic: 비활성화 시 Start 버튼 비활성화 (CanExecute)
+- [x] 디버깅: 윈도우 시작 시 먹통 현상 <!-- id: 19 -->
+    - [x] 원인 분석: Shell 초기화 전 NotifyIcon 접근 시도 (Deadlock)
+    - [x] 해결: 기능 완전 제거 및 NotifyIcon 초기화 롤백 (동기식 복구)
+- [x] 디버깅: 프로그램 실행되나 화면 안 뜸 (Invisible App) <!-- id: 20 -->
+    - [x] 원인 분석: Start in Tray 설정 ON인데 아이콘 로드 실패하여 창만 숨겨짐
+    - [x] 해결: 아이콘 로드 실패 시 창 숨김 방지 로직 추가
+    - [x] 조치: Start in Tray 설정 강제 OFF (설정 파일 무시)
+- [x] 디버깅: 설정 저장 불량 <!-- id: 21 -->
+    - [x] Enable Idle Mining: 코드 리팩토링 중 저장 로직 누락 수정
+    - [x] Start in Tray: 유령 앱 방지용 강제 OFF 코드 제거 (정상화)
