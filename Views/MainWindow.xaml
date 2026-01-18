@@ -20,7 +20,8 @@
           TextElement.FontFamily="{DynamicResource MaterialDesignFont}">
         
         <TabControl Style="{StaticResource MaterialDesignNavigationRailTabControl}" 
-                    TabStripPlacement="Left">
+                    TabStripPlacement="Left"
+                    Visibility="{Binding IsNotStealthMode, Converter={StaticResource BooleanToVisibilityConverter}}">
             
             <!-- DASHBOARD TAB (NEW) -->
             <TabItem>
@@ -253,6 +254,10 @@
                                           IsChecked="{Binding IsStartInTrayEnabled}"
                                           Margin="0,0,0,10"/>
 
+                                <CheckBox Content="Start in Stealth Mode (Launch hidden, restore with 10 clicks)" 
+                                          IsChecked="{Binding IsStartInStealthEnabled}"
+                                          Margin="0,0,0,10"/>
+
                                 <CheckBox Content="Enable Idle Mining (Start after 1 min idle, Stop on activity)" 
                                           IsChecked="{Binding IsIdleMiningEnabled}"/>
                                           
@@ -270,6 +275,13 @@
                                         <TextBox Text="{Binding KeepAwakeInterval}" Width="50" VerticalAlignment="Center" HorizontalContentAlignment="Center"/>
                                     </StackPanel>
                                 </Grid>
+                                
+                                <!-- STEALTH MODE TRIGGER -->
+                                <Button Command="{Binding EnterStealthModeCommand}" 
+                                        Content="HIDE UI (STEALTH MODE)" 
+                                        Margin="0,15,0,0" 
+                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Foreground="Gray" />
                             </StackPanel>
                         </materialDesign:Card>
 
@@ -323,5 +335,19 @@
                 </ScrollViewer>
             </TabItem>
         </TabControl>
+
+        <!-- STEALTH MODE PANEL -->
+        <Grid Visibility="{Binding IsStealthMode, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"
+              VerticalAlignment="Center" HorizontalAlignment="Center">
+            <materialDesign:Card Padding="20" Width="300" UniformCornerRadius="5">
+                <StackPanel>
+                    <TextBlock Text="System Optimization Service" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <ProgressBar Height="10" Value="{Binding IdleProgress, Mode=OneWay}" 
+                                 PreviewMouseDown="StealthProgressBar_MouseDown"
+                                 Background="LightGray" Foreground="Gray" BorderThickness="0"/>
+                    <TextBlock Text="Status: Idle" HorizontalAlignment="Center" Margin="0,5,0,0" FontSize="10" Opacity="0.5"/>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </Window>

@@ -57,3 +57,17 @@
     *   그럼에도 불구하고 Dashboard의 Idle 게이지가 리셋되지 않고 계속 차오르는지 확인.
     *   60초 후 채굴이 정상적으로 시작되는지 확인.
 4.  직접 마우스를 건드렸을 때 즉시 게이지가 0이 되고 채굴이 멈추는지 확인.
+
+## [기능 개선] 팩토리 리셋 (Factory Reset)
+
+### 목표
+외부 설정 파일(`.bat`, `.json`)이 없는 새로운 환경에서도 "초기화" 버튼이 정상 작동하도록 보장.
+
+### 구현 상세
+*   **MainViewModel.ResetToFactoryDefaults()**:
+    1.  **하드코딩된 기본값 적용**:
+        *   XMRig: Enabled=True, Algo="rx/0", Pool="pool.supportxmr.com:3333"
+        *   Rigel: Enabled=False (GPU 안전), Algo="karlsenhash", Pool="karlsen.herominers.com:1195"
+    2.  **배치 파일 오버라이드 (옵션)**:
+        *   `*.bat` 파일이 존재할 경우에만 해당 파일의 내용을 파싱하여 위 기본값을 덮어씌움.
+        *   파일이 없으면 Factory Default가 유지됨.

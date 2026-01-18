@@ -19,7 +19,8 @@ namespace EncryptionMinerControl.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private WinForms.NotifyIcon _notifyIcon;
+    private WinForms.NotifyIcon? _notifyIcon;
+    private List<DateTime> _secretClickHistory = new List<DateTime>();
 
     public MainWindow()
     {
@@ -74,7 +75,7 @@ public partial class MainWindow : Window
         if (DataContext is MainViewModel vm)
         {
             // Safety Check: If icon failed to initialize properly (null icon handle), don't hide window
-            if (vm.IsStartInTrayEnabled && _notifyIcon.Icon != null)
+            if (vm.IsStartInTrayEnabled && _notifyIcon?.Icon != null)
             {
                 HideToTray();
             }
@@ -101,7 +102,27 @@ public partial class MainWindow : Window
         Show();
         WindowState = WindowState.Normal;
         Activate();
-        _notifyIcon.Visible = false;
+        if (_notifyIcon != null) _notifyIcon.Visible = false;
+    }
+    
+    // Secret Handshake: 10 Clicks in 5 Seconds to Exit Stealth Mode
+    private void StealthProgressBar_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        var now = DateTime.Now;
+        _secretClickHistory.Add(now);
+
+        // Remove clicks older than 5 seconds
+        _secretClickHistory.RemoveAll(t => (now - t).TotalSeconds > 5);
+
+        if (_secretClickHistory.Count >= 10)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.IsStealthMode = false;
+                _secretClickHistory.Clear();
+                System.Windows.MessageBox.Show("Stealth Mode Deactivated!", "System", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
     }
 
     protected override void OnClosing(CancelEventArgs e)

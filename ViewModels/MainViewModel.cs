@@ -50,6 +50,13 @@ public class MainViewModel : INotifyPropertyChanged
         set { _isStartInTrayEnabled = value; OnPropertyChanged(); }
     }
 
+    private bool _isStartInStealthEnabled;
+    public bool IsStartInStealthEnabled
+    {
+        get => _isStartInStealthEnabled;
+        set { _isStartInStealthEnabled = value; OnPropertyChanged(); }
+    }
+
     private int _keepAwakeInterval = 60;
     public int KeepAwakeInterval
     {
@@ -62,6 +69,22 @@ public class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(); 
         }
     }
+
+    // Stealth Mode
+    private bool _isStealthMode;
+    public bool IsStealthMode
+    {
+        get => _isStealthMode;
+        set 
+        { 
+            _isStealthMode = value; 
+            OnPropertyChanged(); 
+            OnPropertyChanged(nameof(IsNotStealthMode)); 
+        }
+    }
+    public bool IsNotStealthMode => !IsStealthMode;
+
+    public ICommand EnterStealthModeCommand { get; }
 
     // Virtual Idle Logic State
     private double _lastSystemIdleTime;
@@ -108,6 +131,7 @@ public class MainViewModel : INotifyPropertyChanged
         SaveConfigCommand = new RelayCommand(_ => SaveConfig());
         AutoConfigCommand = new RelayCommand(_ => AutoConfigure());
         ResetConfigCommand = new RelayCommand(_ => ResetToBatchDefaults());
+        EnterStealthModeCommand = new RelayCommand(_ => IsStealthMode = true);
         
         var config = LoadConfig();
 
@@ -435,6 +459,12 @@ public class MainViewModel : INotifyPropertyChanged
                     // Safety: Force Tray Start OFF due to visibility issues reported by user
                     IsStartInTrayEnabled = config.IsStartInTrayEnabled;
                     
+                    IsStartInStealthEnabled = config.IsStartInStealthEnabled;
+                    if (IsStartInStealthEnabled)
+                    {
+                        IsStealthMode = true;
+                    }
+
                     return config;
                 }
             }
@@ -456,7 +486,8 @@ public class MainViewModel : INotifyPropertyChanged
             IsIdleMiningEnabled = IsIdleMiningEnabled,
             IsKeepAwakeEnabled = IsKeepAwakeEnabled,
             KeepAwakeInterval = KeepAwakeInterval,
-            IsStartInTrayEnabled = IsStartInTrayEnabled
+            IsStartInTrayEnabled = IsStartInTrayEnabled,
+            IsStartInStealthEnabled = IsStartInStealthEnabled
         };
 
         try
