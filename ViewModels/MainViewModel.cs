@@ -343,28 +343,57 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
+            // 1. Apply Hardcoded Factory Defaults (Safe Fallback)
+            // XMRig Defaults
+            XmrigMiner.Config.Algorithm = "rx/0";
+            XmrigMiner.Config.PoolUrl = "pool.supportxmr.com:3333";
+            XmrigMiner.Config.WalletAddress = "48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzBY52XU6klMba4qWntkBa4sgtn4RfmP4fL"; // Example placeholder
+            XmrigMiner.Config.Enabled = true;
+
+            // Rigel Defaults
+            RigelMiner.Config.Algorithm = "karlsenhash";
+            RigelMiner.Config.PoolUrl = "karlsen.herominers.com:1195";
+            RigelMiner.Config.WalletAddress = "karlsen:qz42...example_wallet"; // Example placeholder
+            RigelMiner.Config.Enabled = false; // Disable GPU by default for safety
+
+            // 2. Try to find and apply local batch file settings (Override if exists)
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var batFiles = Directory.GetFiles(baseDir, "*.bat");
 
-            foreach (var file in batFiles)
+            if (batFiles.Length > 0)
             {
-                string content = File.ReadAllText(file);
-                
-                // Very basic parser assuming standard command line flags
-                if (file.Contains("xmrig", StringComparison.OrdinalIgnoreCase))
+                foreach (var file in batFiles)
                 {
-                    XmrigMiner.Config.Algorithm = ExtractArg(content, "-a") ?? XmrigMiner.Config.Algorithm;
-                    XmrigMiner.Config.PoolUrl = ExtractArg(content, "-o") ?? XmrigMiner.Config.PoolUrl;
-                    XmrigMiner.Config.WalletAddress = ExtractArg(content, "-u") ?? XmrigMiner.Config.WalletAddress;
+                    string content = File.ReadAllText(file);
+                    
+                    if (file.Contains("xmrig", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var algo = ExtractArg(content, "-a");
+                        var pool = ExtractArg(content, "-o");
+                        var wallet = ExtractArg(content, "-u");
+
+                        if (!string.IsNullOrEmpty(algo)) XmrigMiner.Config.Algorithm = algo;
+                        if (!string.IsNullOrEmpty(pool)) XmrigMiner.Config.PoolUrl = pool;
+                        if (!string.IsNullOrEmpty(wallet)) XmrigMiner.Config.WalletAddress = wallet;
+                    }
+                    else if (file.Contains("rigel", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var algo = ExtractArg(content, "-a");
+                        var pool = ExtractArg(content, "-o");
+                        var wallet = ExtractArg(content, "-u");
+                        
+                        if (!string.IsNullOrEmpty(algo)) RigelMiner.Config.Algorithm = algo;
+                        if (!string.IsNullOrEmpty(pool)) RigelMiner.Config.PoolUrl = pool;
+                        if (!string.IsNullOrEmpty(wallet)) RigelMiner.Config.WalletAddress = wallet;
+                    }
                 }
-                else if (file.Contains("rigel", StringComparison.OrdinalIgnoreCase))
-                {
-                    RigelMiner.Config.Algorithm = ExtractArg(content, "-a") ?? RigelMiner.Config.Algorithm;
-                    RigelMiner.Config.PoolUrl = ExtractArg(content, "-o") ?? RigelMiner.Config.PoolUrl;
-                    RigelMiner.Config.WalletAddress = ExtractArg(content, "-u") ?? RigelMiner.Config.WalletAddress;
-                }
+                System.Windows.MessageBox.Show("Settings reset to Factory Defaults + Local Batch Files.");
             }
-            System.Windows.MessageBox.Show("Settings reset from found batch files.");
+            else
+            {
+                System.Windows.MessageBox.Show("Settings reset to Factory Defaults (No batch files found).");
+            }
+
             SaveConfig();
         }
         catch (Exception ex)
