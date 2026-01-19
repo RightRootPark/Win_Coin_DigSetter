@@ -75,4 +75,5 @@ public class AppConfig
     public bool IsStartInTrayEnabled { get; set; }
     public bool IsStartInStealthEnabled { get; set; }
     public int KeepAwakeInterval { get; set; } = 300; // Default 5 minutes
+    public int IdleMiningStartDelay { get; set; } = 60; // Default 60 seconds
 }

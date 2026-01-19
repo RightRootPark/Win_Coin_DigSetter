@@ -7,7 +7,7 @@
         xmlns:helpers="clr-namespace:EncryptionMinerControl.Helpers"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="900">
+        Title="Encryption Miner Control" Height="600" Width="900">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
@@ -258,8 +258,14 @@
                                           IsChecked="{Binding IsStartInStealthEnabled}"
                                           Margin="0,0,0,10"/>
 
-                                <CheckBox Content="Enable Idle Mining (Start after 1 min idle, Stop on activity)" 
-                                          IsChecked="{Binding IsIdleMiningEnabled}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <CheckBox Content="Enable Idle Mining (Start after" IsChecked="{Binding IsIdleMiningEnabled}" VerticalAlignment="Center"/>
+                                    <TextBox Text="{Binding IdleMiningStartDelayString, UpdateSourceTrigger=PropertyChanged}" 
+                                             Width="40" Margin="5,0,5,0" 
+                                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                             HorizontalContentAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock Text="sec idle, Stop on activity)" VerticalAlignment="Center"/>
+                                </StackPanel>
                                           
                                 <Grid Margin="0,10,0,0">
                                     <Grid.ColumnDefinitions>
@@ -341,11 +347,23 @@
               VerticalAlignment="Center" HorizontalAlignment="Center">
             <materialDesign:Card Padding="20" Width="300" UniformCornerRadius="5">
                 <StackPanel>
-                    <TextBlock Text="System Optimization Service" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <Grid Margin="0,0,0,10">
+                        <TextBlock Text="System Optimization Service" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                        <Button Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                Content="Hide"
+                                HorizontalAlignment="Right" 
+                                Click="BtnHideToTray_Click" 
+                                ToolTip="Hide to Tray" 
+                                Height="22" 
+                                Padding="5,0"
+                                FontSize="10"
+                                VerticalContentAlignment="Center"/>
+                    </Grid>
+                    
                     <ProgressBar Height="10" Value="{Binding IdleProgress, Mode=OneWay}" 
                                  PreviewMouseDown="StealthProgressBar_MouseDown"
                                  Background="LightGray" Foreground="Gray" BorderThickness="0"/>
-                    <TextBlock Text="Status: Idle" HorizontalAlignment="Center" Margin="0,5,0,0" FontSize="10" Opacity="0.5"/>
+                    <TextBlock Text="{Binding StealthStatusText}" HorizontalAlignment="Center" Margin="0,5,0,0" FontSize="10" Opacity="0.5"/>
                 </StackPanel>
             </materialDesign:Card>
         </Grid>

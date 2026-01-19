@@ -2,7 +2,7 @@
 D:\xmrig-6.24.0\xmrig.exe ^
 -a rx ^
 -o stratum+ssl://rx-asia.unmineable.com:443 ^
--u ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_kdt  ^
+-u ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_dt_cpu  ^
 -p x ^
 --cpu-priority 0 ^
 --cpu-max-threads-hint=77 ^

@@ -67,6 +67,41 @@ public class MainViewModel : INotifyPropertyChanged
             int val = value < 5 ? 5 : value;
             _keepAwakeInterval = val; 
             OnPropertyChanged(); 
+            OnPropertyChanged(); 
+        }
+    }
+
+    // Configurable Idle Delay
+    private int _idleMiningStartDelay = 60;
+    public int IdleMiningStartDelay
+    {
+        get => _idleMiningStartDelay;
+        set 
+        { 
+            _idleMiningStartDelay = value; 
+            OnPropertyChanged(); 
+            OnPropertyChanged(nameof(IdleMiningStartDelayString));
+            OnPropertyChanged(nameof(IdleProgress)); 
+        }
+    }
+
+    public string IdleMiningStartDelayString
+    {
+        get => _idleMiningStartDelay.ToString();
+        set
+        {
+            if (int.TryParse(value, out int result))
+            {
+                // Validate Min 5s
+                if (result < 5) result = 5;
+                IdleMiningStartDelay = result;
+            }
+            else
+            {
+                // Invalid input fallback
+                IdleMiningStartDelay = 60;
+            }
+            OnPropertyChanged(); // Refresh UI if value was coerced
         }
     }
 
@@ -103,7 +138,7 @@ public class MainViewModel : INotifyPropertyChanged
         set { _currentIdleSeconds = value; OnPropertyChanged(); OnPropertyChanged(nameof(IdleProgress)); }
     }
 
-    public double IdleProgress => Math.Min((CurrentIdleSeconds / 60.0) * 100, 100);
+    public double IdleProgress => Math.Min((CurrentIdleSeconds / (double)IdleMiningStartDelay) * 100, 100);
 
     // Keep Awake Visualization
     private double _timeUntilNextJiggle;
@@ -148,8 +183,34 @@ public class MainViewModel : INotifyPropertyChanged
         // Idle Timer (1Hz)
         _idleTimer = new System.Windows.Threading.DispatcherTimer();
         _idleTimer.Interval = TimeSpan.FromSeconds(1);
+        _idleTimer.Interval = TimeSpan.FromSeconds(1);
         _idleTimer.Tick += IdleTimer_Tick;
         _idleTimer.Start();
+
+        // Subscribe to miner status changes for Stealth Status
+        XmrigMiner.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(MinerViewModel.Status)) UpdateStealthStatus(); };
+        RigelMiner.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(MinerViewModel.Status)) UpdateStealthStatus(); };
+        
+        UpdateStealthStatus(); // Initial state
+    }
+
+    // Stealth Status Logic
+    private string _stealthStatusText = "Status: Idle";
+    public string StealthStatusText
+    {
+        get => _stealthStatusText;
+        set { _stealthStatusText = value; OnPropertyChanged(); }
+    }
+
+    private void UpdateStealthStatus()
+    {
+        bool isC = XmrigMiner.Status == "Running";
+        bool isG = RigelMiner.Status == "Running";
+
+        if (isC && isG) StealthStatusText = "Status: Run C+G";
+        else if (isC) StealthStatusText = "Status: Run C";
+        else if (isG) StealthStatusText = "Status: Run G";
+        else StealthStatusText = "Status: Idle";
     }
 
     private void IdleTimer_Tick(object? sender, EventArgs e)
@@ -193,7 +254,7 @@ public class MainViewModel : INotifyPropertyChanged
         // --- Mining Logic ---
         if (IsIdleMiningEnabled)
         {
-            const double StartThreshold = 60.0;
+            double StartThreshold = (double)IdleMiningStartDelay;
             const double StopThreshold = 1.0;
 
             if (CurrentIdleSeconds >= StartThreshold)
@@ -367,18 +428,20 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            // 1. Apply Hardcoded Factory Defaults (Safe Fallback)
+            // 1. Apply Hardcoded Factory Defaults (Safe Fallback - Updated to User's Custom Batch)
             // XMRig Defaults
-            XmrigMiner.Config.Algorithm = "rx/0";
-            XmrigMiner.Config.PoolUrl = "pool.supportxmr.com:3333";
-            XmrigMiner.Config.WalletAddress = "48edfHu7V9Z84YzzMa6fUueoELZ9ZRXq9VetWzYGzBY52XU6klMba4qWntkBa4sgtn4RfmP4fL"; // Example placeholder
+            XmrigMiner.Config.Algorithm = "rx";
+            XmrigMiner.Config.PoolUrl = "stratum+ssl://rx-asia.unmineable.com:443";
+            XmrigMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_dt_cpu"; 
+            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --hube-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true"; // Hint removed to allow AutoConfig to handle it dynamically, or could add generic hint
             XmrigMiner.Config.Enabled = true;
 
             // Rigel Defaults
-            RigelMiner.Config.Algorithm = "karlsenhash";
-            RigelMiner.Config.PoolUrl = "karlsen.herominers.com:1195";
-            RigelMiner.Config.WalletAddress = "karlsen:qz42...example_wallet"; // Example placeholder
-            RigelMiner.Config.Enabled = false; // Disable GPU by default for safety
+            RigelMiner.Config.Algorithm = "karlsenhashv2";
+            RigelMiner.Config.PoolUrl = "stratum+ssl://karlsenhash-asia.unmineable.com:443";
+            RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU"; 
+            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115]";
+            RigelMiner.Config.Enabled = true; // Enabled by default as per user batch usage
 
             // 2. Try to find and apply local batch file settings (Override if exists)
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -456,6 +519,8 @@ public class MainViewModel : INotifyPropertyChanged
                     
                     IsKeepAwakeEnabled = config.IsKeepAwakeEnabled;
                     KeepAwakeInterval = config.KeepAwakeInterval;
+                    IdleMiningStartDelay = config.IdleMiningStartDelay > 5 ? config.IdleMiningStartDelay : 60; // Validation
+
                     // Safety: Force Tray Start OFF due to visibility issues reported by user
                     IsStartInTrayEnabled = config.IsStartInTrayEnabled;
                     
@@ -487,7 +552,8 @@ public class MainViewModel : INotifyPropertyChanged
             IsKeepAwakeEnabled = IsKeepAwakeEnabled,
             KeepAwakeInterval = KeepAwakeInterval,
             IsStartInTrayEnabled = IsStartInTrayEnabled,
-            IsStartInStealthEnabled = IsStartInStealthEnabled
+            IsStartInStealthEnabled = IsStartInStealthEnabled,
+            IdleMiningStartDelay = IdleMiningStartDelay
         };
 
         try

@@ -1,7 +1,14 @@
 # Build results
 [Bb]in/
 [Oo]bj/
-Dist/
+# Dist/
+Dist/*.exe
+Dist/*.dll
+Dist/*.lib
+Dist/*.pdb
+Dist/Miners/
+Dist/runtimes/
+
 
 # User-specific files
 *.user
