@@ -10,7 +10,8 @@ namespace EncryptionMinerControl.ViewModels;
 
 public class MainViewModel : INotifyPropertyChanged
 {
-    private const string ConfigFile = "settings.json";
+    // [Korea] 설정 파일 경로를 절대 경로로 지정하여 스케줄러 실행 시 경로 문제 해결
+    private static string ConfigFile => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
     
     public MinerViewModel XmrigMiner { get; private set; }
     public MinerViewModel RigelMiner { get; private set; }
