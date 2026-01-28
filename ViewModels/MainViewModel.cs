@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.ComponentModel;
 using EncryptionMinerControl.Models;
+using EncryptionMinerControl.Services;
 
 namespace EncryptionMinerControl.ViewModels;
 
@@ -148,7 +149,7 @@ public class MainViewModel : INotifyPropertyChanged
         get => _timeUntilNextJiggle;
         set { _timeUntilNextJiggle = value; OnPropertyChanged(); OnPropertyChanged(nameof(KeepAwakeProgress)); }
     }
-    
+
     public double KeepAwakeProgress 
     {
         get 
@@ -159,11 +160,12 @@ public class MainViewModel : INotifyPropertyChanged
             return Math.Min((elapsed / KeepAwakeInterval) * 100, 100);
         }
     }
-
-
-
+    
     public MainViewModel()
     {
+        // [Korea] 1. 시작 전 좀비 프로세스 청소 (이전 세션의 잔재 제거)
+        CleanupZombieMiners();
+
         SaveConfigCommand = new RelayCommand(_ => SaveConfig());
         AutoConfigCommand = new RelayCommand(_ => AutoConfigure());
         ResetConfigCommand = new RelayCommand(_ => ResetToBatchDefaults());
@@ -184,7 +186,6 @@ public class MainViewModel : INotifyPropertyChanged
         // Idle Timer (1Hz)
         _idleTimer = new System.Windows.Threading.DispatcherTimer();
         _idleTimer.Interval = TimeSpan.FromSeconds(1);
-        _idleTimer.Interval = TimeSpan.FromSeconds(1);
         _idleTimer.Tick += IdleTimer_Tick;
         _idleTimer.Start();
 
@@ -193,6 +194,17 @@ public class MainViewModel : INotifyPropertyChanged
         RigelMiner.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(MinerViewModel.Status)) UpdateStealthStatus(); };
         
         UpdateStealthStatus(); // Initial state
+    }
+
+    private void CleanupZombieMiners()
+    {
+        try
+        {
+            string minerDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Miners");
+            ProcessManager.KillProcessByPath("xmrig", minerDir);
+            ProcessManager.KillProcessByPath("rigel", minerDir);
+        }
+        catch { /* Ignore */ }
     }
 
     // Stealth Status Logic

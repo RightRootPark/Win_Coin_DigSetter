@@ -73,4 +73,37 @@ public class ProcessManager
             _logCallback?.Invoke($"[Exception] Failed to stop process: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// [Korea] 지정된 폴더 내에서 실행 중인 특정 이름의 모든 프로세스를 강제로 종료합니다. (좀비 프로세스 청소용)
+    /// </summary>
+    public static void KillProcessByPath(string processNameWithoutExt, string directoryPath)
+    {
+        try
+        {
+            var processes = Process.GetProcessesByName(processNameWithoutExt);
+            foreach (var p in processes)
+            {
+                try
+                {
+                    // 정확한 경로 확인 (내 폴더 안에 있는 녀석인지)
+                    // 권한 문제로 접근 불가할 수 있으므로 try-catch
+                    if (p.MainModule?.FileName != null)
+                    {
+                        string processPath = p.MainModule.FileName;
+                        if (processPath.Contains(directoryPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            p.Kill();
+                            Debug.WriteLine($"[System] Killed zombie process: {processNameWithoutExt} ({p.Id})");
+                        }
+                    }
+                }
+                catch { /* Ignore access denied or already exited */ }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[System] Failed to clean up processes: {ex.Message}");
+        }
+    }
 }

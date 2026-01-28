@@ -69,6 +69,22 @@ public class MinerViewModel : INotifyPropertyChanged
     private void Stop()
     {
         _processManager.Stop();
+        
+        // [Korea] 1. Cleanup Zombies
+        // 프로세스 매니저가 닫았더라도, 혹시 모를 좀비 프로세스를 위해 이름으로 한 번 더 확인 사살
+        try
+        {
+            string exeName = System.IO.Path.GetFileNameWithoutExtension(Config.ExecutablePath);
+            string dirPath = System.IO.Path.GetDirectoryName(Config.ExecutablePath) ?? "";
+            
+            // 유효한 경로일 때만 수행
+            if (!string.IsNullOrEmpty(exeName) && !string.IsNullOrEmpty(dirPath))
+            {
+                ProcessManager.KillProcessByPath(exeName, dirPath);
+            }
+        }
+        catch { /* Ignore */ }
+
         Status = "Stopped";
     }
 
