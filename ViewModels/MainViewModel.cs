@@ -446,7 +446,7 @@ public class MainViewModel : INotifyPropertyChanged
             XmrigMiner.Config.Algorithm = "rx";
             XmrigMiner.Config.PoolUrl = "stratum+ssl://rx-asia.unmineable.com:443";
             XmrigMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_dt_cpu"; 
-            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --hube-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true"; // Hint removed to allow AutoConfig to handle it dynamically, or could add generic hint
+            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --huge-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true"; // Hint removed to allow AutoConfig to handle it dynamically, or could add generic hint
             XmrigMiner.Config.Enabled = true;
 
             // Rigel Defaults
