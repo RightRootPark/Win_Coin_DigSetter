@@ -4,6 +4,7 @@ using System.Windows.Input;
 using EncryptionMinerControl.Models;
 using EncryptionMinerControl.Services;
 using System.Collections.ObjectModel;
+using System.Collections.Concurrent;
 using System.Windows.Threading;
 
 namespace EncryptionMinerControl.ViewModels;
@@ -36,6 +37,12 @@ public class MinerViewModel : INotifyPropertyChanged
     private string _status = "Stopped";
     private string _latestLog = "";
     
+    // [Korea] UI 최적화: 로그 버퍼링 (ConcurrentQueue & Timer)
+    // 1. Process -> Queue (빠름)
+    // 2. Queue -> UI (0.2초마다 한 번씩 렌더링)
+    private readonly ConcurrentQueue<string> _logQueue = new ConcurrentQueue<string>();
+    private readonly DispatcherTimer _logUpdateTimer;
+
     // UI log buffer (Observable for UI binding)
     public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
 
@@ -54,6 +61,14 @@ public class MinerViewModel : INotifyPropertyChanged
     {
         Config = config;
         _processManager = new ProcessManager(OnLogReceived);
+
+        // [Korea] Log Throttling Timer (5 FPS)
+        _logUpdateTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(200) // 0.2초
+        };
+        _logUpdateTimer.Tick += ProcessLogBuffer;
+        _logUpdateTimer.Start();
 
         StartCommand = new RelayCommand(_ => Start(), _ => !_processManager.IsRunning && Config.Enabled);
         StopCommand = new RelayCommand(_ => Stop(), _ => _processManager.IsRunning);
@@ -112,12 +127,26 @@ public class MinerViewModel : INotifyPropertyChanged
 
     private void OnLogReceived(string message)
     {
-        // Dispatch to UI thread
-        System.Windows.Application.Current.Dispatcher.Invoke(() =>
+        // 최적화: 즉시 UI 갱신하지 않고 큐에 적재 (매우 빠름)
+        _logQueue.Enqueue(message);
+    }
+
+    private void ProcessLogBuffer(object? sender, EventArgs e)
+    {
+        if (_logQueue.IsEmpty) return;
+
+        // 한 번에 최대 50줄까지만 처리 (UI 멈춤 방지)
+        int processedCount = 0;
+        
+        while (!_logQueue.IsEmpty && processedCount < 50)
         {
-            if (Logs.Count > 1000) Logs.RemoveAt(0);
-            Logs.Add(message);
-        });
+            if (_logQueue.TryDequeue(out string? log) && log != null)
+            {
+                if (Logs.Count > 1000) Logs.RemoveAt(0);
+                Logs.Add(log);
+                processedCount++;
+            }
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
