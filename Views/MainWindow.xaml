@@ -85,7 +85,14 @@
                                 
                                 <Grid Margin="0,0,0,5">
                                     <TextBlock Text="Time until Idle Mining Starts" VerticalAlignment="Center" FontSize="12"/>
-                                    <TextBlock Text="{Binding CurrentIdleSeconds, StringFormat={}{0:F0}s / 60s}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" FontSize="12">
+                                        <TextBlock.Text>
+                                            <MultiBinding StringFormat="{}{0:F0}s / {1}s">
+                                                <Binding Path="CurrentIdleSeconds"/>
+                                                <Binding Path="IdleMiningStartDelay"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
+                                    </TextBlock>
                                 </Grid>
                                 
                                 <ProgressBar Value="{Binding IdleProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource SecondaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
