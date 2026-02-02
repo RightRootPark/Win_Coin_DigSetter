@@ -313,12 +313,18 @@ public class MainViewModel : INotifyPropertyChanged
                 {
                     try
                     {
-                        // Move 5 pixels right
-                        mouse_event(MOUSEEVENTF_MOVE, 5, 0, 0, 0);
-                        // Wait 50ms (visible twitch)
-                        await Task.Delay(50);
-                        // Move back
-                        mouse_event(MOUSEEVENTF_MOVE, unchecked((uint)-5), 0, 0, 0);
+                        // [Korea] Intense Jiggle: 10px로 이동 거리 확대 & 쉐이킷(Shake) 동작
+                        // Right -> Left -> Right -> Left (확실한 깨우기)
+                        uint move = 10;
+                        uint moveBack = unchecked((uint)-10);
+                        
+                        for (int i = 0; i < 2; i++)
+                        {
+                            mouse_event(MOUSEEVENTF_MOVE, move, 0, 0, 0);
+                            await Task.Delay(50);
+                            mouse_event(MOUSEEVENTF_MOVE, moveBack, 0, 0, 0);
+                            await Task.Delay(50);
+                        }
                     }
                     catch (Exception ex)
                     {
