@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.ComponentModel;
+using System.Text;
 using EncryptionMinerControl.Models;
 using EncryptionMinerControl.Services;
 
@@ -407,6 +408,7 @@ public class MainViewModel : INotifyPropertyChanged
                 bool hasNvidia = false;
                 try 
                 {
+                    // [Korea] WMI 안정성 강화: 일부 윈도우(Lite, Gaming)에서 WMI가 손상된 경우 방어
                     using (var searcher = new System.Management.ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
                     {
                         foreach (var obj in searcher.Get())
@@ -420,7 +422,11 @@ public class MainViewModel : INotifyPropertyChanged
                         }
                     }
                 }
-                catch { /* Ignore WMI errors */ }
+                catch (Exception ex)
+                { 
+                    // WMI failed - possibly no GPU or broken OS components.
+                    System.Diagnostics.Debug.WriteLine($"[WMI Error] {ex.Message}");
+                }
 
                 if (hasNvidia)
                 {
@@ -441,12 +447,12 @@ public class MainViewModel : INotifyPropertyChanged
     {
         try
         {
-            // 1. Apply Hardcoded Factory Defaults (Safe Fallback - Updated to User's Custom Batch)
+            // 1. Apply Hardcoded Factory Defaults
             // XMRig Defaults
             XmrigMiner.Config.Algorithm = "rx";
             XmrigMiner.Config.PoolUrl = "stratum+ssl://rx-asia.unmineable.com:443";
             XmrigMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_dt_cpu"; 
-            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --hube-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true"; // Hint removed to allow AutoConfig to handle it dynamically, or could add generic hint
+            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --hube-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true";
             XmrigMiner.Config.Enabled = true;
 
             // Rigel Defaults
@@ -454,7 +460,7 @@ public class MainViewModel : INotifyPropertyChanged
             RigelMiner.Config.PoolUrl = "stratum+ssl://karlsenhash-asia.unmineable.com:443";
             RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU"; 
             RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115]";
-            RigelMiner.Config.Enabled = true; // Enabled by default as per user batch usage
+            RigelMiner.Config.Enabled = true;
 
             // 2. Try to find and apply local batch file settings (Override if exists)
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
@@ -464,11 +470,12 @@ public class MainViewModel : INotifyPropertyChanged
             {
                 foreach (var file in batFiles)
                 {
-                    string content = File.ReadAllText(file);
+                    string content = ReadAllTextSmart(file); // [Korea] 인코딩 자동 감지
                     
                     if (file.Contains("xmrig", StringComparison.OrdinalIgnoreCase))
                     {
                         var algo = ExtractArg(content, "-a");
+
                         var pool = ExtractArg(content, "-o");
                         var wallet = ExtractArg(content, "-u");
 
@@ -587,6 +594,36 @@ public class MainViewModel : INotifyPropertyChanged
         if (XmrigMiner.Status == "Running") XmrigMiner.StopCommand.Execute(null);
         if (RigelMiner.Status == "Running") RigelMiner.StopCommand.Execute(null);
     }
+
+    private string ReadAllTextSmart(string path)
+    {
+        try 
+        {
+            // 1. Detect BOM
+            using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            {
+                if (fs.Length >= 3)
+                {
+                    var bom = new byte[3];
+                    fs.Read(bom, 0, 3);
+                    
+                    if (bom[0] == 0xef && bom[1] == 0xbb && bom[2] == 0xbf) 
+                        return File.ReadAllText(path, Encoding.UTF8);
+                }
+            }
+
+            // 2. Try CP949 (Korean) as default fallback for batch files
+            // CodePage 949 requires System.Text.Encoding.CodePages package
+            Encoding cp949 = Encoding.GetEncoding(949);
+            return File.ReadAllText(path, cp949);
+        }
+        catch
+        {
+            // Fallback to strict UTF-8 or system default if 949 fails
+            return File.ReadAllText(path); 
+        }
+    }
+
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)

@@ -42,6 +42,12 @@ Developed with ❤️ by **RightRootPark** & **Antigravity AI**
 - **Persistence**: All settings (including checkbox states) are saved to `settings.json` and restored on reboot.
 - **Cleanup**: Automatically terminates miner processes when the application is closed.
 
+## 💻 System Requirements
+- **OS**: Windows 10 (Version 1607+) or Windows 11. (Windows 7/8 not supported due to .NET 8)
+- **Runtime**: .NET 8.0 Desktop Runtime.
+- **Privileges**: **Administrator rights** are required to manage processes and prevent sleep mode effectively.
+- **PowerShell**: Version 5.0 or higher (for downloader script).
+
 ## 🛠 Installation & Usage
 
 1.  **Download**: Get the latest release from the [Releases] page or built `Dist` folder.
@@ -116,6 +122,12 @@ If you want to continue developing this project using **Google DeepMind's Antigr
 - **자동 실행**: 윈도우 시작 시 프로그램이 자동으로 켜지도록 설정할 수 있습니다.
 - **설정 저장**: 체크박스 상태를 포함한 모든 설정이 `settings.json`에 저장되어 재부팅 후에도 유지됩니다.
 - **자동 정리**: 프로그램을 닫으면 백그라운드에서 실행 중인 채굴기도 함께 깔끔하게 종료됩니다.
+
+## 💻 시스템 요구사항
+- **OS**: Windows 10 (1607 버전 이상) 또는 Windows 11. (Windows 7/8은 .NET 8 미지원으로 실행 불가)
+- **런타임**: .NET 8.0 Desktop Runtime.
+- **권한**: 프로세스 제어 및 절전 방지를 위해 **관리자 권한**으로 실행해야 합니다.
+- **PowerShell**: 5.0 버전 이상 (다운로더 스크립트 사용 시).
 
 ## 🛠 설치 및 사용 방법
 

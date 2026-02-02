@@ -11,6 +11,9 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // [Korea] CP949 인코딩 지원 (배치 파일 읽기용)
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         
         var mainWindow = new MainWindow();
         _mainViewModel = new MainViewModel();
