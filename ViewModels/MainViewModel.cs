@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text.Json;
@@ -402,30 +403,27 @@ public class MainViewModel : INotifyPropertyChanged
             }
 
             // 3. GPU Detection
-            if (OperatingSystem.IsWindows())
+            bool hasNvidia = false;
+            try
             {
-                bool hasNvidia = false;
-                try 
+                using (var searcher = new System.Management.ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
                 {
-                    using (var searcher = new System.Management.ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
+                    foreach (var obj in searcher.Get())
                     {
-                        foreach (var obj in searcher.Get())
+                        string name = obj["Name"]?.ToString() ?? "";
+                        if (name.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
                         {
-                            string name = obj["Name"]?.ToString() ?? "";
-                            if (name.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
-                            {
-                                hasNvidia = true;
-                                break;
-                            }
+                            hasNvidia = true;
+                            break;
                         }
                     }
                 }
-                catch { /* Ignore WMI errors */ }
+            }
+            catch { /* Ignore WMI errors */ }
 
-                if (hasNvidia)
-                {
-                    RigelMiner.Config.Enabled = true;
-                }
+            if (hasNvidia)
+            {
+                RigelMiner.Config.Enabled = true;
             }
             
             System.Windows.MessageBox.Show($"Auto-configuration completed!\nWallet Updated: Yes\nCPU Hint: {threads} threads");

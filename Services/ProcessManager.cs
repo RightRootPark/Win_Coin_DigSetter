@@ -63,7 +63,23 @@ public class ProcessManager
 
         try
         {
+#if NETCOREAPP
             _process.Kill(true); // Kill entire process tree
+#else
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "taskkill",
+                    Arguments = $"/F /T /PID {_process.Id}",
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                })?.WaitForExit(2000);
+            }
+            catch { /* Fallback to standard kill if taskkill fails */ }
+
+            if (!_process.HasExited) _process.Kill();
+#endif
             _process.WaitForExit(3000);
             _process = null;
             _logCallback?.Invoke("[System] Process stopped.");
