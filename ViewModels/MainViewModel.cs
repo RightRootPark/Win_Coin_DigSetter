@@ -461,11 +461,11 @@ public class MainViewModel : INotifyPropertyChanged
             XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --hube-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true";
             XmrigMiner.Config.Enabled = true;
 
-            // Rigel Defaults
-            RigelMiner.Config.Algorithm = "karlsenhashv2";
-            RigelMiner.Config.PoolUrl = "stratum+ssl://karlsenhash-asia.unmineable.com:443";
+            // Rigel Defaults (Updated to XelisHash as per user request 2026-02-04)
+            RigelMiner.Config.Algorithm = "xelishashv3";
+            RigelMiner.Config.PoolUrl = "stratum+tcp://xelishash-asia.unmineable.com:3333";
             RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU"; 
-            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115]";
+            RigelMiner.Config.ExtraArguments = "--no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115]";
             RigelMiner.Config.Enabled = true;
 
             // 2. Try to find and apply local batch file settings (Override if exists)
