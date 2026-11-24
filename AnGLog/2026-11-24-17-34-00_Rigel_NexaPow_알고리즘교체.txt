@@ -1,0 +1,43 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-24 16:29 ~ 17:34 KST
+- 작업 목표: unMineable 연동 Rigel GPU 채굴 중단(中斷) 원인 규명(糾明) 및 GTX 1060 3GB 환경 대체 알고리즘 적용·코드 반영
+- 작업 결과: 성공 (Rigel 알고리즘을 `nexapow` + `--nexapow-small-lut on`으로 교체 완료)
+- Commit ID: 9ec5a03 (코드·배치·README 반영 커밋)
+
+2. 변경 내역 (Changes)
+- [운영 설정] `C:\DTshare\Utility\EncryptionMinerControl_Release260202\settings.json.bak_20261124` (기존 설정 백업)
+- [운영 설정] `C:\DTshare\Utility\EncryptionMinerControl_Release260202\settings.json`
+  * Rigel(Type 1) Algorithm: `xelishashv3` -> `nexapow`
+  * PoolUrl: `stratum+ssl://xelishash-asia.unmineable.com:443` -> `stratum+ssl://nexapow-asia.unmineable.com:443`
+  * ExtraArguments: `--nexapow-small-lut on` 추가, `--log-file "rigel_1060_karlsen_log.txt"` -> `"rigel_1060_nexapow_log.txt"` (기존 `--temp-limit tc[60-70]tm[105-115]`, 지갑 주소, XMRig 설정 유지)
+- [소스 코드] `ViewModels/MainViewModel.cs` (`ResetToBatchDefaults()`)
+  * Rigel 공장 기본값을 `nexapow`, `stratum+ssl://nexapow-asia.unmineable.com:443`, `--nexapow-small-lut on` 포함 인자로 갱신
+- [배치 파일] `"unmineable-ALGO-karlsenhash-rigel - 2.BAT"` -> `unmineable-ALGO-nexapow-rigel.BAT` (`git mv` 및 내용 `nexapow` + `--nexapow-small-lut on` 갱신)
+- [문서] `README.md`
+  * 영문/한국어 섹션에 XelisHash/KarlsenHash 지원 종료 및 `nexapow`(`--nexapow-small-lut on`) 기본값 변경 안내 추가
+- [빌드 검증] `dotnet build -c Release` 오류 0개 확인 (기존 `MinerViewModel._latestLog` CS0414 경고 2개만 존재)
+
+3. 결정 근거 (Rationale)
+- 중단 원인 분석:
+  * 운영 로그(`rigel_1060_karlsen_log.txt.2`)에서 2026-11-14 13:03:41 KST `unexpected-eof` 이후 `os error 10061`(연결 거부) 및 `os error 11001`(알려진 호스트 없음) 지속 확인.
+  * 2026-11-14 04:00 UTC(13:00 KST)부로 unMineable이 XelisHash(XEL) 지원을 종료(상장 폐지(廢止))했으며, `xelishash-asia.unmineable.com` 및 `karlsenhash-asia.unmineable.com` DNS A 레코드가 제거됨을 확인함.
+- 후보 알고리즘 시험 결과 (NVIDIA GeForce GTX 1060 3GB, Rigel v1.23.1, 2026-11-24 실측):
+  * `nexapow` (기본 big LUT, 45초 시험): LUT 생성 27초 소요, `2.294 MH/s`, VRAM `2661 MiB`, `49.9 W`
+  * `nexapow` (`--nexapow-small-lut on`, 6분 시험): LUT 생성 2초, `5.138~7.411 MH/s`(보통 7.0~7.4 MH/s), `Acc 0 / Rej 0` (6분 내), 오류 0건, VRAM `2796~2906 MiB`, `67.0~80.5 W`, 70°C 도달 시 간헐적 쿨다운
+  * `nexapow` (`--nexapow-small-lut on`, 추가 5분 검증): `17:19:50`에 `GPU#0 solution accepted (274ms)` 확인 (`Acc 1 / Rej 0`, `6.861 MH/s`, Pool `14.32 MH/s`, VRAM `2768 MiB`)
+  * `alephium` (`blake3-asia.unmineable.com:443`, 6분 시험): `176.7~237.7 MH/s`, `Acc 2 / Rej 0`, 오류 0건, VRAM `702~708 MiB`, `52.3~110.9 W`, 15초마다 빈번한 70°C 쿨다운
+  * `autolykos2` (`autolykos-asia.unmineable.com:443`, 6분 시험): `0.06~2.06 MH/s`(대부분 0.4~2.0 MH/s), `Acc 0 / Rej 0`, VRAM `2752~2826 MiB` 스와핑(Swapping)으로 성능 붕괴
+  * `pearlpow`, `quantus`: unMineable DNS는 존재하나 Rigel v1.23.1 미지원으로 제외
+- 선정 이유:
+  * 전기료 미고려 조건에서 일일 예상 총매출 비교 시 `nexapow` (~7 MH/s 기준 약 $0.01/day)가 `autolykos2` (3GB 성능 저하로 약 $0.001~0.002/day) 및 `alephium` (ASIC 장악으로 약 $0.00/day) 대비 가장 높으며, `--nexapow-small-lut on` 적용 시 3GB VRAM 내 정상 동작 및 `solution accepted`가 검증됨.
+
+4. 미해결 이슈 (Issues)
+- 온도 제한(`--temp-limit tc[60-70]tm[105-115]`): 하드웨어 보호 임계값(Threshold)이므로 임의 변경하지 않았으나, 시험 중 70°C 도달 시 주기적 쿨다운 대기가 발생하여 해시 저하 요인이 됨(온도 상한 조정 또는 팬 제어는 사용자 판단 필요).
+- 로그 비대화(肥大化): 운영 폴더 `Miners\Loging.txt`(XMRig 로그) 용량이 약 145MB로 누적되어 있음.
+- 저장소 구조: 작업 폴더 상위 루트(`C:\DTWorkSpace\AntiGravityProject\Win_Coin_DigSetter\.git`)에 낡은 Git 저장소가 남아 있음(실제 원격 연동 저장소는 내부 `Win_Coin_DigSetter\Win_Coin_DigSetter` 폴더임).
+- 재패키징 미수행: 운영 폴더의 `EncryptionMinerControl.exe` 단일 파일 재빌드·교체는 수행하지 않았음(`settings.json`만 수정해도 즉시 동작하나, UI의 `Reset to Batch` 버튼 동작 시 최신 기본값 반영을 원하면 재배포 필요).
+- 기존 로컬 변경분: `Docs/task.md`의 기존 미커밋 수정 내용은 이번 커밋 대상에서 제외하고 그대로 유지함.
+
+5. 다음 단계 (Next Step)
+- `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe`를 재시작하여 GPU 채굴(`nexapow`)이 정상 시작되고 `Miners\rigel_1060_nexapow_log.txt`에 `solution accepted`가 쌓이는지 확인.
+- 필요 시 사용자 확인 후 `--temp-limit` 상향 또는 `--fan-control` 조정, `Miners\Loging.txt` 정리 및 `Release` 단일 파일 재패키징(`dotnet publish`) 진행.
