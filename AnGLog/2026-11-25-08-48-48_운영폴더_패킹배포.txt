@@ -1,0 +1,24 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 08:47 ~ 08:49 KST
+- 작업 목표: 최신 소스(Rigel `nexapow` 기본값, XMRig `--huge-pages-jit`·10MB 로그 로테이션, Monitoring 탭 드래그/COPY 기능)를 단일 실행 파일로 패킹하여 운영 폴더(`C:\DTshare\Utility\EncryptionMinerControl_Release260202`)에 배포
+- 작업 결과: 성공 (`dotnet publish` 오류 0건, SHA-256 일치 검증 완료)
+- Commit ID: `32fb713` (최신 기능 커밋) / `5168da0` (직전 문서 커밋, 배포 기준 HEAD)
+
+2. 변경 내역 (Changes)
+- [패킹 산출물] `bin\Publish_win-x64\EncryptionMinerControl.exe` (`.gitignore` 제외 대상)
+  * 옵션: `dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=None -p:DebugSymbols=false`
+  * 크기: `173,389,882 bytes` / SHA-256: `70FF8581DFC344A1A8A3A2C990BC40BD6D3ED730624A3CDE07156D24A4D2EB3A`
+- [운영 백업] `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125` (`173,688,890 bytes`, 2026-02-03 기존 파일 보존)
+- [운영 배포] `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe`
+  * 배포 후 SHA-256 재검증 결과 원본과 동일(`HashMatch=True`), 기존 `settings.json`, `Miners\`, `icon.png`, `download_miners.ps1` 유지
+
+3. 결정 근거 (Rationale)
+- 소스 코드에만 반영되어 있던 Monitoring 탭 로그 복사 기능(`32fb713`)과 XMRig 10MB 로그 자동 로테이션(`2b31ae4`)을 운영 환경에서 즉시 사용할 수 있도록 `win-x64` self-contained 단일 실행 파일로 재패킹·교체함.
+- git tracked 파일이 포함된 `Dist\` 대신 `.gitignore` 대상인 `bin\Publish_win-x64\`에 출력하여 저장소 워킹 트리가 오염되지 않도록 함.
+
+4. 미해결 이슈 (Issues)
+- 배포 후 GUI 실행 테스트: `EncryptionMinerControl.exe`의 신규 배포본 실제 실행 및 Monitoring 탭 드래그 복사/`COPY` 버튼 동작은 사용자 실행 시 최종 확인 필요.
+- 백업 정리: 운영 폴더의 `.bak_20261124*`, `.bak_20261125` 백업 파일들은 정상 동작 확인 후 필요 시 정리 가능.
+
+5. 다음 단계 (Next Step)
+- `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe`를 실행하여 Monitoring 탭의 드래그 선택 복사 및 `COPY` 버튼 동작과 XMRig(`--huge-pages-jit`)·Rigel(`nexapow`) 채굴 상태를 확인.
