@@ -73,3 +73,9 @@
 - [x] 디버깅: 설정 저장 불량 <!-- id: 21 -->
     - [x] Enable Idle Mining: 코드 리팩토링 중 저장 로직 누락 수정
     - [x] Start in Tray: 유령 앱 방지용 강제 OFF 코드 제거 (정상화)
+- [x] 유지보수 및 업데이트 <!-- id: 22 -->
+    - [x] 최신 코드 릴리스 빌드 (dotnet publish)
+    - [x] 빌드 결과물 경로 안내
+- [x] 유지보수: unMineable XelisHash 폐지 대응 (2026-11-24) <!-- id: 23 -->
+    - [x] GTX 1060 3GB 기준 후보 알고리즘 시험 및 NexaPow (`--nexapow-small-lut on`) 선정
+    - [x] Rigel 기본 설정 코드(`MainViewModel.cs`), 배치 파일(`unmineable-ALGO-nexapow-rigel.BAT`), `README.md` 업데이트
