@@ -82,3 +82,7 @@
 - [x] 유지보수: XMRig 옵션 오타 수정 및 로그 로테이션 추가 (2026-11-24) <!-- id: 24 -->
     - [x] `--hube-pages-jit` -> `--huge-pages-jit` 오타 수정 (`MainViewModel.cs`, BAT, 운영 `settings.json`)
     - [x] `MinerViewModel.cs`에 XMRig 시작 전 10MB 초과 로그 자동 로테이션(`.1`) 로직 추가
+- [x] UI 개선: Monitoring 탭 로그 드래그 복사 및 COPY 버튼 추가 (2026-11-25) <!-- id: 25 -->
+    - [x] `AutoScrollBehavior.cs`에 읽기 전용 `TextBox`용 `LogItemsSource` 증분 동기화 및 선택·스크롤 보존 로직 추가
+    - [x] `MinerViewModel.cs`에 `CopyLogsCommand` 및 `CopyButtonText` 추가
+    - [x] `MainWindow.xaml` XMRig/Rigel 로그 뷰어를 `TextBox`로 교체 및 `COPY` 버튼 배치

@@ -171,21 +171,29 @@
                             
                             <!-- Log Viewer -->
                             <Border Grid.Row="2" Background="Black" CornerRadius="5" Padding="5" Margin="0,0,0,10">
-                                <ListBox ItemsSource="{Binding XmrigMiner.Logs}" Background="Transparent" BorderThickness="0" 
-                                         helpers:AutoScrollBehavior.AutoScroll="True"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}" Foreground="#00FF00" TextWrapping="Wrap"/>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                <TextBox Style="{x:Null}"
+                                         helpers:AutoScrollBehavior.LogItemsSource="{Binding XmrigMiner.Logs}"
+                                         IsReadOnly="True"
+                                         IsReadOnlyCaretVisible="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Disabled"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="2"
+                                         Foreground="#00FF00"
+                                         CaretBrush="#00FF00"
+                                         SelectionBrush="#55FFFFFF"
+                                         FontFamily="Consolas"
+                                         FontSize="11"/>
                             </Border>
                             
                             <!-- Controls -->
                             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Command="{Binding XmrigMiner.StartCommand}" Content="START" Margin="0,0,10,0" Style="{StaticResource MaterialDesignRaisedButton}"/>
                                 <Button Command="{Binding XmrigMiner.StopCommand}" Content="STOP" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
+                                <Button Command="{Binding XmrigMiner.CopyLogsCommand}" Content="{Binding XmrigMiner.CopyButtonText}" Margin="10,0,0,0" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Copy all XMRig logs to clipboard"/>
                             </StackPanel>
                         </Grid>
                     </materialDesign:Card>
@@ -216,21 +224,29 @@
 
                             <!-- Log Viewer -->
                             <Border Grid.Row="2" Background="Black" CornerRadius="5" Padding="5" Margin="0,0,0,10">
-                                <ListBox ItemsSource="{Binding RigelMiner.Logs}" Background="Transparent" BorderThickness="0"
-                                         helpers:AutoScrollBehavior.AutoScroll="True"
-                                         ScrollViewer.VerticalScrollBarVisibility="Auto" FontFamily="Consolas" FontSize="11">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding}" Foreground="#00BFFF" TextWrapping="Wrap"/>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
+                                <TextBox Style="{x:Null}"
+                                         helpers:AutoScrollBehavior.LogItemsSource="{Binding RigelMiner.Logs}"
+                                         IsReadOnly="True"
+                                         IsReadOnlyCaretVisible="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto"
+                                         HorizontalScrollBarVisibility="Disabled"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="2"
+                                         Foreground="#00BFFF"
+                                         CaretBrush="#00BFFF"
+                                         SelectionBrush="#55FFFFFF"
+                                         FontFamily="Consolas"
+                                         FontSize="11"/>
                             </Border>
 
                             <!-- Controls -->
                             <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Command="{Binding RigelMiner.StartCommand}" Content="START" Margin="0,0,10,0" Style="{StaticResource MaterialDesignRaisedButton}"/>
                                 <Button Command="{Binding RigelMiner.StopCommand}" Content="STOP" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
+                                <Button Command="{Binding RigelMiner.CopyLogsCommand}" Content="{Binding RigelMiner.CopyButtonText}" Margin="10,0,0,0" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Copy all Rigel logs to clipboard"/>
                             </StackPanel>
                         </Grid>
                     </materialDesign:Card>

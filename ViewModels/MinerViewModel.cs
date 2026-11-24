@@ -38,6 +38,7 @@ public class MinerViewModel : INotifyPropertyChanged
     private readonly ProcessManager _processManager;
     private string _status = "Stopped";
     private string _latestLog = "";
+    private string _copyButtonText = "COPY";
     private const long MaxXmrigLogBytes = 10L * 1024 * 1024; // 10 MB (bytes)
     
     // [Korea] UI 최적화: 로그 버퍼링 (ConcurrentQueue & Timer)
@@ -45,6 +46,7 @@ public class MinerViewModel : INotifyPropertyChanged
     // 2. Queue -> UI (0.2초마다 한 번씩 렌더링)
     private readonly ConcurrentQueue<string> _logQueue = new ConcurrentQueue<string>();
     private readonly DispatcherTimer _logUpdateTimer;
+    private readonly DispatcherTimer _copyButtonResetTimer;
 
     // UI log buffer (Observable for UI binding)
     public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
@@ -57,8 +59,15 @@ public class MinerViewModel : INotifyPropertyChanged
         set { _status = value; OnPropertyChanged(); }
     }
 
+    public string CopyButtonText
+    {
+        get => _copyButtonText;
+        set { _copyButtonText = value; OnPropertyChanged(); }
+    }
+
     public ICommand StartCommand { get; }
     public ICommand StopCommand { get; }
+    public ICommand CopyLogsCommand { get; }
 
     public MinerViewModel(MinerConfig config)
     {
@@ -73,8 +82,37 @@ public class MinerViewModel : INotifyPropertyChanged
         _logUpdateTimer.Tick += ProcessLogBuffer;
         _logUpdateTimer.Start();
 
+        _copyButtonResetTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromMilliseconds(1500)
+        };
+        _copyButtonResetTimer.Tick += (_, _) =>
+        {
+            _copyButtonResetTimer.Stop();
+            CopyButtonText = "COPY";
+        };
+
         StartCommand = new RelayCommand(_ => Start(), _ => !_processManager.IsRunning && Config.Enabled);
         StopCommand = new RelayCommand(_ => Stop(), _ => _processManager.IsRunning);
+        CopyLogsCommand = new RelayCommand(_ => CopyLogs());
+    }
+
+    // Copy all buffered miner logs to clipboard / 클립보드로 현재 로그 전체 복사
+    private void CopyLogs()
+    {
+        if (Logs.Count == 0) return;
+
+        try
+        {
+            System.Windows.Clipboard.SetText(string.Join(Environment.NewLine, Logs));
+            CopyButtonText = "COPIED!";
+            _copyButtonResetTimer.Stop();
+            _copyButtonResetTimer.Start();
+        }
+        catch (Exception ex)
+        {
+            _logQueue.Enqueue($"[Warning] Failed to copy logs: {ex.Message}");
+        }
     }
 
     private void Start()
