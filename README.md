@@ -57,6 +57,7 @@ Developed with ❤️ by **RightRootPark** & **Antigravity AI**
 4.  **Configure**:
     *   Go to **Settings** tab.
     *   Click **AUTO DETECT & CONFIGURE** (Recommended).
+    *   *Note*: Rigel default algorithm has been updated to **NexaPow (`nexapow`)** with `--nexapow-small-lut on` (reflecting unMineable's XelisHash/KarlsenHash delisting).
     *   Verify your Wallet Address and Pool URL.
     *   Click **SAVE SETTINGS**.
 5.  **Idle Mining**:
@@ -138,7 +139,7 @@ If you want to continue developing this project using **Google DeepMind's Antigr
 4.  **설정**:
     *   **Settings** 탭으로 이동합니다.
     *   **AUTO DETECT & CONFIGURE** 버튼을 누릅니다. (추천)
-    *   **참고**: Rigel의 기본 알고리즘은 **XelisHash (`xelishashv3`, XEL)**로 업데이트되었습니다. (구 Karlsen 종료 반영)
+    *   **참고**: Rigel의 기본 알고리즘은 **NexaPow (`nexapow`, NEXA)**로 업데이트되었습니다. (unMineable의 KarlsenHash 및 2026-11-14 XelisHash 지원 종료 반영, GTX 1060 3GB용 `--nexapow-small-lut on` 옵션 포함)
     *   지갑 주소와 풀 주소를 확인하고 **SAVE SETTINGS**를 누릅니다.
 5.  **아이들 마이닝**:
     *   **"Enable Idle Mining"**을 체크합니다.

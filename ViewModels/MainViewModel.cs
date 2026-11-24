@@ -461,11 +461,11 @@ public class MainViewModel : INotifyPropertyChanged
             XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --hube-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true";
             XmrigMiner.Config.Enabled = true;
 
-            // Rigel Defaults (Updated to XelisHash as per user request 2026-02-04)
-            RigelMiner.Config.Algorithm = "xelishashv3";
-            RigelMiner.Config.PoolUrl = "stratum+tcp://xelishash-asia.unmineable.com:3333";
+            // Rigel Defaults (Updated to NexaPow on 2026-11-24: unMineable XelisHash/KarlsenHash delisted / XelisHash·KarlsenHash 풀 폐지로 교체)
+            RigelMiner.Config.Algorithm = "nexapow";
+            RigelMiner.Config.PoolUrl = "stratum+ssl://nexapow-asia.unmineable.com:443";
             RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU"; 
-            RigelMiner.Config.ExtraArguments = "--no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115]";
+            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115] --nexapow-small-lut on";
             RigelMiner.Config.Enabled = true;
 
             // 2. Try to find and apply local batch file settings (Override if exists)
