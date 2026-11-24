@@ -79,3 +79,6 @@
 - [x] 유지보수: unMineable XelisHash 폐지 대응 (2026-11-24) <!-- id: 23 -->
     - [x] GTX 1060 3GB 기준 후보 알고리즘 시험 및 NexaPow (`--nexapow-small-lut on`) 선정
     - [x] Rigel 기본 설정 코드(`MainViewModel.cs`), 배치 파일(`unmineable-ALGO-nexapow-rigel.BAT`), `README.md` 업데이트
+- [x] 유지보수: XMRig 옵션 오타 수정 및 로그 로테이션 추가 (2026-11-24) <!-- id: 24 -->
+    - [x] `--hube-pages-jit` -> `--huge-pages-jit` 오타 수정 (`MainViewModel.cs`, BAT, 운영 `settings.json`)
+    - [x] `MinerViewModel.cs`에 XMRig 시작 전 10MB 초과 로그 자동 로테이션(`.1`) 로직 추가

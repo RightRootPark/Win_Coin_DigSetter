@@ -8,7 +8,7 @@ D:\xmrig-6.24.0\xmrig.exe ^
 --cpu-max-threads-hint=77 ^
 ::--opencl ^
 ::--cuda ^
---hube-pages-jit ^
+--huge-pages-jit ^
 --randomx-mode=fast ^
 --randomx-wrmsr ^
 --randomx-rdmsr ^

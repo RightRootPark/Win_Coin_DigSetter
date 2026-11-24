@@ -1,3 +1,5 @@
+using System.IO;
+using System.Text.RegularExpressions;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
@@ -36,6 +38,7 @@ public class MinerViewModel : INotifyPropertyChanged
     private readonly ProcessManager _processManager;
     private string _status = "Stopped";
     private string _latestLog = "";
+    private const long MaxXmrigLogBytes = 10L * 1024 * 1024; // 10 MB (bytes)
     
     // [Korea] UI 최적화: 로그 버퍼링 (ConcurrentQueue & Timer)
     // 1. Process -> Queue (빠름)
@@ -78,7 +81,41 @@ public class MinerViewModel : INotifyPropertyChanged
     {
         Status = "Running";
         string args = BuildArguments();
+        if (Config.Type == MinerType.XMRig)
+        {
+            RotateXmrigLogIfNeeded(args);
+        }
         _processManager.Start(Config.ExecutablePath, args);
+    }
+
+    // XMRig has no built-in log rotation / XMRig 자체 로테이션 미지원으로 10MB 초과 시 .1 백업 교체
+    private void RotateXmrigLogIfNeeded(string arguments)
+    {
+        try
+        {
+            var match = Regex.Match(arguments, @"(?:^|\s)(?:--log-file|-l)(?:=|\s+)(?:""([^""]+)""|(\S+))", RegexOptions.IgnoreCase);
+            if (!match.Success) return;
+
+            string logFile = !string.IsNullOrEmpty(match.Groups[1].Value)
+                ? match.Groups[1].Value
+                : match.Groups[2].Value;
+            if (string.IsNullOrWhiteSpace(logFile)) return;
+
+            string baseDir = Path.GetDirectoryName(Config.ExecutablePath) ?? string.Empty;
+            string logPath = Path.IsPathRooted(logFile) ? logFile : Path.Combine(baseDir, logFile);
+
+            var fileInfo = new FileInfo(logPath);
+            if (!fileInfo.Exists || fileInfo.Length <= MaxXmrigLogBytes) return;
+
+            double sizeMb = fileInfo.Length / (1024.0 * 1024.0);
+            string backupPath = logPath + ".1";
+            File.Move(logPath, backupPath, overwrite: true);
+            _logQueue.Enqueue($"[System] Rotated XMRig log ({sizeMb:F1} MB -> {Path.GetFileName(backupPath)})");
+        }
+        catch (Exception ex)
+        {
+            _logQueue.Enqueue($"[Warning] Failed to rotate XMRig log: {ex.Message}");
+        }
     }
 
     private void Stop()
