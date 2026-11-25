@@ -1,0 +1,33 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 17:00 ~ 17:04 KST
+- 작업 목표: Settings 탭에서 XMRig(12종)·Rigel(15종)의 설정 가능한 주요 CLI 옵션을 모두 체크박스(+ 값 입력 TextBox)로 제어하고, 맨 밑 `Extra Arguments`와 양방향 실시간 동기화(同期化)되도록 확장
+- 작업 결과: 성공 (`dotnet build -c Release` 경고 0개·오류 0개, 퍼블리시 및 운영 폴더 배포·SHA-256 일치 검증 완료)
+- Commit ID: `f3469d0`
+
+2. 변경 내역 (Changes)
+- [신규 모델] `Models/MinerOptionItem.cs`
+  * `MinerOptionKind` (`BoolFlag`, `PairFlag`, `SpaceValue`, `EqualsValue`, `QuotedSpaceValue`) 지원
+  * 체크박스(`IsChecked`) 켜짐 시 빈 값이면 `DefaultValue` 자동 채움, `Value` 입력 시 `IsChecked`가 켜진 상태일 때만 `ExtraArguments` 즉시 반영
+  * `SyncFromArguments()` / `ApplyToArguments()`: 기존 `ExtraArguments`의 미등록 사용자 인자를 보존하면서 해당 옵션만 정확히 파싱·교체·제거
+- [뷰모델] `ViewModels/MinerViewModel.cs`
+  * 기존 6개 개별 프로퍼티를 `ObservableCollection<MinerOptionItem> Options` 데이터 주도 구조로 리팩토링
+  * XMRig 12종(`-p`, `--cpu-max-threads-hint`, `--cpu-priority`, `--randomx-mode`, `--huge-pages-jit`, MSR, `--keepalive`, `--pause-on-battery`, `--randomx-no-numa`, `--print-time`, `--donate-level`, `--log-file`) 등록
+  * Rigel 15종(`--temp-limit`, `--fan-control`, `--nexapow-small-lut on`, `--pl`, `--lock-cclock`, `--cclock`, `--mclock`, `-d`, `--stats-interval`, `--log-file`, `--no-strict-ssl`, `--no-tui`, `--no-colour`, `--cpu-check`, `--no-watchdog`) 등록
+- [뷰] `Views/MainWindow.xaml`
+  * `<Window.Resources>`에 공유 `MinerOptionRowTemplate` 추가 (`CheckBox` + 체크 시 활성화되는 값 `TextBox`, 툴팁 설명 포함)
+  * XMRig·Rigel 카드에 `ItemsControl` 적용 및 각 카드 맨 밑 `Extra Arguments` (`Consolas`, `TextWrapping="Wrap"`) 유지
+- [문서] `Docs/task.md` (`id: 29` 추가)
+- [빌드·퍼블리시·운영 배포]
+  * `dotnet build -c Release`: 경고 0개, 오류 0개
+  * `bin\Publish_win-x64\EncryptionMinerControl.exe`: `173,430,842 bytes`, SHA-256 `9F96230A7FBF3BBDA043B18ED9B4FE1F64FECC281786FB0D6441E4BD7FEEFC67`
+  * `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125_6` 백업 후 배포 (`HashMatch=True`), `settings.json` 및 `Miners\` 보존
+
+3. 결정 근거 (Rationale)
+- 수많은 마이너 옵션을 개별 프로퍼티로 나열하지 않고 `MinerOptionItem` 메타데이터 모델 + 공유 XAML `DataTemplate`로 통일하여 중복 없는 유지보수 구조를 확보함.
+- 값이 필요한 옵션은 체크박스 선택 시에만 우측 입력란이 활성화되어 오작동을 방지하고, 체크 해제 시 마지막 입력값을 유지해 재선택 편의를 높임.
+
+4. 미해결 이슈 (Issues)
+- 배포된 GUI에서 27종 옵션 체크박스·입력란 동작 육안 확인은 앱 실행 시 최종 점검 필요.
+
+5. 다음 단계 (Next Step)
+- 운영 폴더의 `EncryptionMinerControl.exe` 실행(관리자 권한 권장) 후 Settings 탭의 XMRig/Rigel 옵션 목록·값 입력·하단 `Extra Arguments` 동기화 확인.
