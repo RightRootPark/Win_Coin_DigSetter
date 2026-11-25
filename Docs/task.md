@@ -100,3 +100,7 @@
     - [x] `MinerViewModel.cs`에 XMRig/Rigel 6개 옵션 체크박스 양방향 프로퍼티 추가
     - [x] `MainWindow.xaml` Settings 카드 내 체크박스 배치 및 `Extra Arguments` 맨 하단 배치
     - [x] `MainViewModel.cs` `SAVE SETTINGS` 및 자동설정·초기화 완료 시 재시작 안내 알림 추가
+- [x] UI 확장: Settings 전체 CLI 옵션 체크박스·값 입력 UI 확장 (2026-11-25) <!-- id: 29 -->
+    - [x] `MinerOptionItem.cs` 모델 추가 (체크박스 + 값 입력 TextBox + `ExtraArguments` 양방향 동기화)
+    - [x] `MinerViewModel.cs` XMRig 12종·Rigel 15종 전체 옵션 등록
+    - [x] `MainWindow.xaml` 공유 `MinerOptionRowTemplate` 적용 및 `Extra Arguments` 하단 유지

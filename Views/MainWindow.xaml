@@ -10,6 +10,29 @@
         Title="Encryption Miner Control" Height="600" Width="900">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <DataTemplate x:Key="MinerOptionRowTemplate">
+            <Grid Margin="0,3">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="260"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0"
+                          Content="{Binding Label}"
+                          IsChecked="{Binding IsChecked}"
+                          ToolTip="{Binding Description}"
+                          VerticalAlignment="Center"/>
+                <TextBox Grid.Column="1"
+                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsChecked}"
+                         Visibility="{Binding HasValue, Converter={StaticResource BooleanToVisibilityConverter}}"
+                         materialDesign:HintAssist.Hint="{Binding Placeholder}"
+                         ToolTip="{Binding Description}"
+                         FontSize="12"
+                         Padding="2"
+                         Margin="10,0,0,0"
+                         VerticalAlignment="Center"/>
+            </Grid>
+        </DataTemplate>
     </Window.Resources>
     <Grid TextElement.Foreground="{DynamicResource MaterialDesignBody}"
           TextElement.FontWeight="Regular"
@@ -391,12 +414,10 @@
                                 <TextBox Text="{Binding XmrigMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding XmrigMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15"/>
 
-                                <TextBlock Text="Options (체크박스로 전환 시 하단 Extra Arguments에 자동 반영)" FontSize="11" Opacity="0.7" Margin="0,0,0,6"/>
-                                <CheckBox Content="Huge Pages JIT (--huge-pages-jit)" IsChecked="{Binding XmrigMiner.IsXmrigHugePagesJitEnabled}" Margin="0,0,0,6"/>
-                                <CheckBox Content="RandomX Fast Mode (체크: fast / 해제: light, 4GB RAM은 해제 권장)" IsChecked="{Binding XmrigMiner.IsXmrigFastModeEnabled}" Margin="0,0,0,6"/>
-                                <CheckBox Content="Enable MSR Mod (--randomx-wrmsr --randomx-rdmsr, 관리자 권한 필요)" IsChecked="{Binding XmrigMiner.IsXmrigMsrEnabled}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Options (체크 후 필요 시 우측 값을 입력하면 하단 Extra Arguments에 자동 반영)" FontSize="11" Opacity="0.7" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding XmrigMiner.Options}" ItemTemplate="{StaticResource MinerOptionRowTemplate}" Margin="0,0,0,12"/>
 
-                                <TextBox Text="{Binding XmrigMiner.Config.ExtraArguments, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                <TextBox Text="{Binding XmrigMiner.Config.ExtraArguments, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Margin="0,0,0,5"/>
                             </StackPanel>
                         </materialDesign:Card>
                         
@@ -415,12 +436,10 @@
                                 <TextBox Text="{Binding RigelMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding RigelMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15"/>
 
-                                <TextBlock Text="Options (체크박스로 전환 시 하단 Extra Arguments에 자동 반영)" FontSize="11" Opacity="0.7" Margin="0,0,0,6"/>
-                                <CheckBox Content="NexaPow Small LUT (--nexapow-small-lut on, 3~4GB GPU 필수)" IsChecked="{Binding RigelMiner.IsRigelSmallLutEnabled}" Margin="0,0,0,6"/>
-                                <CheckBox Content="Max GPU Fan 100% (--fan-control 100, 관리자 권한 필요)" IsChecked="{Binding RigelMiner.IsRigelMaxFanEnabled}" Margin="0,0,0,6"/>
-                                <CheckBox Content="Disable Strict SSL (--no-strict-ssl)" IsChecked="{Binding RigelMiner.IsRigelNoStrictSslEnabled}" Margin="0,0,0,12"/>
+                                <TextBlock Text="Options (체크 후 필요 시 우측 값을 입력하면 하단 Extra Arguments에 자동 반영)" FontSize="11" Opacity="0.7" Margin="0,0,0,6"/>
+                                <ItemsControl ItemsSource="{Binding RigelMiner.Options}" ItemTemplate="{StaticResource MinerOptionRowTemplate}" Margin="0,0,0,12"/>
 
-                                <TextBox Text="{Binding RigelMiner.Config.ExtraArguments, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                <TextBox Text="{Binding RigelMiner.Config.ExtraArguments, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" TextWrapping="Wrap" FontFamily="Consolas" FontSize="12" Margin="0,0,0,5"/>
                              </StackPanel>
                         </materialDesign:Card>
                         

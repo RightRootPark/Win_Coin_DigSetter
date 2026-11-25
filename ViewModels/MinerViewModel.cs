@@ -44,6 +44,7 @@ public class MinerViewModel : INotifyPropertyChanged
     private DateTime? _lastCrashAt;
     private int _consecutiveConnectionErrors;
     private bool _healthAlertRaised;
+    private bool _isUpdatingArgsFromOption;
     private const long MaxXmrigLogBytes = 10L * 1024 * 1024; // 10 MB (bytes)
 
     public event Action<string, string>? AlertRaised;
@@ -57,6 +58,7 @@ public class MinerViewModel : INotifyPropertyChanged
 
     // UI log buffer (Observable for UI binding)
     public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
+    public ObservableCollection<MinerOptionItem> Options { get; } = new ObservableCollection<MinerOptionItem>();
 
     public MinerConfig Config { get; }
 
@@ -127,91 +129,152 @@ public class MinerViewModel : INotifyPropertyChanged
         ClearLogsCommand = new RelayCommand(_ => Logs.Clear());
         OpenLogFolderCommand = new RelayCommand(_ => OpenLogFolder());
 
-        // Sync option checkboxes when ExtraArguments is edited directly / ExtraArguments 직접 수정 시 체크박스 상태 동기화
+        InitializeOptions();
+        SyncOptionsFromArguments();
+
+        // Sync option checkboxes when ExtraArguments is edited directly / ExtraArguments 직접 수정 시 옵션 목록 동기화
         Config.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName == nameof(MinerConfig.ExtraArguments))
+            if (!_isUpdatingArgsFromOption && e.PropertyName == nameof(MinerConfig.ExtraArguments))
             {
-                NotifyOptionFlagsChanged();
+                SyncOptionsFromArguments();
             }
         };
     }
 
-    // XMRig Option Checkboxes / XMRig 주요 옵션 체크박스 바인딩
-    public bool IsXmrigHugePagesJitEnabled
+    private void InitializeOptions()
     {
-        get => HasRegexFlag(@"(?:^|\s)--huge-pages-jit(?=\s|$)");
-        set => ToggleRegexFlag(@"(?:^|\s)--huge-pages-jit(?=\s|$)", "--huge-pages-jit", value);
+        IEnumerable<MinerOptionItem> defs = Config.Type == MinerType.XMRig
+            ? CreateXmrigOptionDefs()
+            : CreateRigelOptionDefs();
+
+        foreach (var opt in defs)
+        {
+            opt.OptionChanged += OnOptionItemChanged;
+            Options.Add(opt);
+        }
     }
 
-    public bool IsXmrigFastModeEnabled
+    private void OnOptionItemChanged(MinerOptionItem item)
     {
-        get => !HasRegexFlag(@"(?:^|\s)--randomx-mode=light(?=\s|$)");
-        set => SetRandomXModeFlag(value ? "fast" : "light");
+        _isUpdatingArgsFromOption = true;
+        try
+        {
+            Config.ExtraArguments = item.ApplyToArguments(Config.ExtraArguments);
+        }
+        finally
+        {
+            _isUpdatingArgsFromOption = false;
+        }
     }
 
-    public bool IsXmrigMsrEnabled
+    private void SyncOptionsFromArguments()
     {
-        get => HasRegexFlag(@"(?:^|\s)--randomx-(?:wr|rd)msr(?=\s|$)");
-        set => ToggleRegexFlag(@"(?:^|\s)--randomx-(?:wr|rd)msr(?=\s|$)", "--randomx-wrmsr --randomx-rdmsr", value);
+        foreach (var opt in Options)
+        {
+            opt.SyncFromArguments(Config.ExtraArguments);
+        }
     }
 
-    // Rigel Option Checkboxes / Rigel 주요 옵션 체크박스 바인딩
-    public bool IsRigelSmallLutEnabled
+    private static MinerOptionItem MakeValueOption(
+        string label,
+        string description,
+        MinerOptionKind kind,
+        string flagToken,
+        string flagRegex,
+        string defaultValue,
+        string placeholder)
     {
-        get => HasRegexFlag(@"(?:^|\s)--nexapow-small-lut(?:\s+|=)on(?=\s|$)");
-        set => ToggleRegexFlag(@"(?:^|\s)--nexapow-small-lut(?:\s+(?:on|off)|=(?:on|off))?(?=\s|$)", "--nexapow-small-lut on", value);
+        return new MinerOptionItem
+        {
+            Label = label,
+            Description = description,
+            Kind = kind,
+            FlagToken = flagToken,
+            ParsePattern = $@"(?:^|\s){flagRegex}(?:=|\s+)(?:""([^""]+)""|(\S+))",
+            RemovePattern = $@"(?:^|\s){flagRegex}(?:=|\s+)(?:""[^""]+""|\S+)",
+            DefaultValue = defaultValue,
+            Placeholder = placeholder
+        };
     }
 
-    public bool IsRigelMaxFanEnabled
+    private static MinerOptionItem MakeBoolOption(string label, string description, string flagToken, string? customPattern = null)
     {
-        get => HasRegexFlag(@"(?:^|\s)--fan-control(?:\s+|=)100(?=\s|$)");
-        set => ToggleRegexFlag(@"(?:^|\s)--fan-control(?:\s+\S+|=\S+)?(?=\s|$)", "--fan-control 100", value);
+        string pattern = customPattern ?? $@"(?:^|\s){Regex.Escape(flagToken)}(?=\s|$)";
+        return new MinerOptionItem
+        {
+            Label = label,
+            Description = description,
+            Kind = MinerOptionKind.BoolFlag,
+            FlagToken = flagToken,
+            ParsePattern = pattern,
+            RemovePattern = pattern
+        };
     }
 
-    public bool IsRigelNoStrictSslEnabled
+    private static IEnumerable<MinerOptionItem> CreateXmrigOptionDefs()
     {
-        get => HasRegexFlag(@"(?:^|\s)--no-strict-ssl(?=\s|$)");
-        set => ToggleRegexFlag(@"(?:^|\s)--no-strict-ssl(?=\s|$)", "--no-strict-ssl", value);
+        return
+        [
+            MakeValueOption("Pool Password (-p)", "풀 접속 비밀번호 (unMineable 기본: x)", MinerOptionKind.SpaceValue, "-p", @"(?:-p|--pass)", "x", "x"),
+            MakeValueOption("CPU Max Threads %", "최대 CPU 사용 비중 백분율 (예: 30, 50, 75)", MinerOptionKind.EqualsValue, "--cpu-max-threads-hint", @"--cpu-max-threads-hint", "30", "30 ~ 75"),
+            MakeValueOption("CPU Priority (0~5)", "프로세스 우선순위 (0=유휴, 2=보통, 5=최고)", MinerOptionKind.SpaceValue, "--cpu-priority", @"--cpu-priority", "0", "0 ~ 5"),
+            MakeValueOption("RandomX Mode", "RandomX 메모리 모드 (fast=8GB+ 권장, light=4GB 저사양, auto)", MinerOptionKind.EqualsValue, "--randomx-mode", @"--randomx-mode", "fast", "fast / light / auto"),
+            MakeBoolOption("Huge Pages JIT", "RandomX JIT 코드에 대용량 페이지 사용 (--huge-pages-jit)", "--huge-pages-jit"),
+            new MinerOptionItem
+            {
+                Label = "Enable MSR Mod (Admin)",
+                Description = "CPU MSR 최적화 활성화 (관리자 권한 필요, 해시 +10~15%)",
+                Kind = MinerOptionKind.PairFlag,
+                FlagToken = "--randomx-wrmsr --randomx-rdmsr",
+                ParsePattern = @"(?:^|\s)--randomx-(?:wr|rd)msr(?=\s|=|$)",
+                RemovePattern = @"(?:^|\s)--randomx-(?:wr|rd)msr(?:=\S+)?(?=\s|$)"
+            },
+            new MinerOptionItem
+            {
+                Label = "Keepalive (--keepalive)",
+                Description = "풀 연결 유지용 keepalive 패킷 전송",
+                Kind = MinerOptionKind.BoolFlag,
+                FlagToken = "--keepalive=true",
+                ParsePattern = @"(?:^|\s)(?:--keepalive(?:=true)?|-k)(?=\s|$)",
+                RemovePattern = @"(?:^|\s)(?:--keepalive(?:=(?:true|false))?|-k)(?=\s|$)"
+            },
+            MakeBoolOption("Pause on Battery", "배터리 전원 사용 시 채굴 일시정지 (--pause-on-battery)", "--pause-on-battery"),
+            MakeBoolOption("RandomX No NUMA", "RandomX NUMA 지원 비활성화 (--randomx-no-numa)", "--randomx-no-numa"),
+            MakeValueOption("Print Stats Interval (s)", "해시레이트 로그 출력 주기(초)", MinerOptionKind.EqualsValue, "--print-time", @"--print-time", "600", "60 ~ 600"),
+            MakeValueOption("Donate Level (%)", "마이너 개발자 기부 비율(%)", MinerOptionKind.EqualsValue, "--donate-level", @"--donate-level", "1", "1"),
+            MakeValueOption("Log File (--log-file)", "XMRig 로그 저장 파일 경로 (Miners 폴더 기준)", MinerOptionKind.EqualsValue, "--log-file", @"(?:--log-file|-l)", "Loging.txt", "Loging.txt")
+        ];
     }
 
-    private bool HasRegexFlag(string pattern)
+    private static IEnumerable<MinerOptionItem> CreateRigelOptionDefs()
     {
-        return Regex.IsMatch(Config.ExtraArguments ?? string.Empty, pattern, RegexOptions.IgnoreCase);
-    }
-
-    private void ToggleRegexFlag(string removePattern, string enableToken, bool enable)
-    {
-        string cleaned = Regex.Replace(Config.ExtraArguments ?? string.Empty, removePattern, string.Empty, RegexOptions.IgnoreCase);
-        cleaned = CleanSpaces(cleaned);
-        Config.ExtraArguments = enable
-            ? (string.IsNullOrEmpty(cleaned) ? enableToken : $"{cleaned} {enableToken}")
-            : cleaned;
-    }
-
-    private void SetRandomXModeFlag(string mode)
-    {
-        const string pattern = @"--randomx-mode=\S+";
-        string replacement = $"--randomx-mode={mode}";
-        string current = Config.ExtraArguments ?? string.Empty;
-        Config.ExtraArguments = Regex.IsMatch(current, pattern, RegexOptions.IgnoreCase)
-            ? Regex.Replace(current, pattern, replacement, RegexOptions.IgnoreCase)
-            : CleanSpaces($"{current} {replacement}");
-    }
-
-    private static string CleanSpaces(string text)
-    {
-        return Regex.Replace(text.Trim(), @"\s{2,}", " ");
-    }
-
-    private void NotifyOptionFlagsChanged()
-    {
-        OnPropertyChanged(nameof(IsXmrigHugePagesJitEnabled));
-        OnPropertyChanged(nameof(IsXmrigFastModeEnabled));
-        OnPropertyChanged(nameof(IsXmrigMsrEnabled));
-        OnPropertyChanged(nameof(IsRigelSmallLutEnabled));
-        OnPropertyChanged(nameof(IsRigelMaxFanEnabled));
-        OnPropertyChanged(nameof(IsRigelNoStrictSslEnabled));
+        return
+        [
+            MakeValueOption("Temp Limit (--temp-limit)", "코어/메모리 온도 상하한 (예: tc[80-90]tm[105-115])", MinerOptionKind.SpaceValue, "--temp-limit", @"--temp-limit", "tc[80-90]tm[105-115]", "tc[80-90]tm[105-115]"),
+            MakeValueOption("Fan Control (Admin)", "팬 속도 고정 또는 자동 목표 온도 (관리자 권한 필요)", MinerOptionKind.SpaceValue, "--fan-control", @"--fan-control", "100", "100 또는 t:[65;_][50;45-75]"),
+            new MinerOptionItem
+            {
+                Label = "NexaPow Small LUT (3~4GB)",
+                Description = "3~4GB GPU에서 NexaPow 메모리 스와핑 방지 (--nexapow-small-lut on)",
+                Kind = MinerOptionKind.PairFlag,
+                FlagToken = "--nexapow-small-lut on",
+                ParsePattern = @"(?:^|\s)--nexapow-small-lut(?:\s+|=)on(?=\s|$)",
+                RemovePattern = @"(?:^|\s)--nexapow-small-lut(?:\s+(?:on|off)|=(?:on|off))?(?=\s|$)"
+            },
+            MakeValueOption("Power Limit W (Admin)", "GPU 소비전력 상한(Watt, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--pl", @"--pl", "70", "예: 70"),
+            MakeValueOption("Lock Core Clock MHz (Admin)", "GPU 코어 클럭 고정(MHz, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--lock-cclock", @"--lock-cclock", "1500", "예: 1500"),
+            MakeValueOption("Core Clock Offset (Admin)", "GPU 코어 클럭 오프셋(MHz, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--cclock", @"--cclock", "0", "예: +100"),
+            MakeValueOption("Mem Clock Offset (Admin)", "GPU 메모리 클럭 오프셋(MHz, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--mclock", @"--mclock", "0", "예: +500"),
+            MakeValueOption("GPU Devices (-d)", "채굴에 사용할 GPU 번호 (쉼표 구분)", MinerOptionKind.SpaceValue, "-d", @"(?:-d|--devices)", "0", "예: 0 또는 0,1"),
+            MakeValueOption("Stats Interval (s)", "GPU 상태 및 해시 출력 주기(초)", MinerOptionKind.SpaceValue, "--stats-interval", @"--stats-interval", "600", "60 ~ 600"),
+            MakeValueOption("Log File (--log-file)", "Rigel 로그 저장 파일명 (5MB 자동 로테이션)", MinerOptionKind.QuotedSpaceValue, "--log-file", @"(?:--log-file|-l)", "rigel_1060_nexapow_log.txt", "rigel_1060_nexapow_log.txt"),
+            MakeBoolOption("Disable Strict SSL", "SSL 인증서 엄격 검증 비활성화 (--no-strict-ssl)", "--no-strict-ssl"),
+            MakeBoolOption("No TUI (--no-tui)", "터미널 TUI 비활성화 (GUI 로그 캡처용 권장)", "--no-tui"),
+            MakeBoolOption("No Colour (--no-colour)", "ANSI 색상 코드 출력 비활성화 (--no-colour)", "--no-colour"),
+            MakeBoolOption("CPU Share Check", "풀 제출 전 CPU에서 share 사전 검증 (--cpu-check)", "--cpu-check"),
+            MakeBoolOption("Disable Watchdog", "Rigel 내장 워치독 프로세스 비활성화 (--no-watchdog)", "--no-watchdog")
+        ];
     }
 
     // Copy all buffered miner logs to clipboard / 클립보드로 현재 로그 전체 복사
