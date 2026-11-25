@@ -1,0 +1,32 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 17:07 ~ 17:10 KST
+- 작업 목표: 다중(多重) NVIDIA GPU 장착 PC(동종·이기종·저용량 카드 혼재)에서도 `AUTO DETECT & CONFIGURE` 및 Settings UI가 오류 없이 대응되도록 개선(改善)
+- 작업 결과: 성공 (`dotnet build -c Release` 경고 0개·오류 0개, 퍼블리시 및 운영 폴더 배포·SHA-256 일치 검증 완료)
+- Commit ID: `a945ed8`
+
+2. 변경 내역 (Changes)
+- [뷰모델] `ViewModels/MainViewModel.cs`
+  * `DetectNvidiaGpu()` -> `DetectNvidiaGpus()`: `nvidia-smi --query-gpu=index,name,memory.total` 1순위 및 WMI fallback으로 전체 NVIDIA GPU `(Index, Name, VramMiB)` 수집
+  * `AutoConfigure()` 멀티 GPU 분기(分岐):
+    - 2GB 이하 카드 혼재 시 `>= 2800 MiB` GPU 인덱스만 `-d`로 자동 지정
+    - GPU별 VRAM 기준 `--nexapow-small-lut` 자동 생성 (전부 >4.5GB면 제거, 단일 소용량 `on`, 멀티 GPU 혼재 시 `on,off` 등)
+    - 채굴 가능 GPU 2대 이상일 때 `--multi-device-arg-mode first` 자동 추가 (단일 `--temp-limit`/`--fan-control`/`--pl` 일괄 적용 보장)
+  * `SetRigelOptionValue()` 범용 헬퍼 도입
+- [뷰모델] `ViewModels/MinerViewModel.cs`
+  * `NexaPow Small LUT` 옵션을 `SpaceValue` 입력형(`on` 또는 `on,off`)으로 변경
+  * `Multi-GPU Arg Mode` (`--multi-device-arg-mode`) 옵션 추가 및 `Temp Limit`/`Fan Control`/`Power Limit`/`Clock`류 툴팁에 쉼표 구분 안내 추가
+- [문서] `Docs/task.md` (`id: 30` 추가)
+- [빌드·퍼블리시·운영 배포]
+  * `dotnet build -c Release`: 경고 0개, 오류 0개
+  * `bin\Publish_win-x64\EncryptionMinerControl.exe`: `173,434,938 bytes`, SHA-256 `3F7CC7BEC6BEE774069DB9A78F5C600059595F9AD12A6D24646ED0BC4BCD3F25`
+  * `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125_7` 백업 후 배포 (`HashMatch=True`), `settings.json` 및 `Miners\` 보존
+
+3. 결정 근거 (Rationale)
+- Rigel의 기본 `--multi-device-arg-mode`가 `match`이므로 멀티 GPU에서 단일 `--temp-limit`/`--fan-control` 값을 그대로 넘기면 기동 실패할 수 있어 `first` 모드를 자동 추가함.
+- 3GB 카드와 6GB+ 카드가 섞여 있는 환경에서도 카드별 손실 없이 동작하도록 `--nexapow-small-lut on,off` 형태를 지원함.
+
+4. 미해결 이슈 (Issues)
+- 현재 작업 PC가 단일 GPU(GTX 1060 3GB) 환경이므로, 2GPU 이상 물리 환경에서의 실기기 테스트는 멀티 GPU PC 배포 시 확인 필요.
+
+5. 다음 단계 (Next Step)
+- 멀티 GPU PC에서 `EncryptionMinerControl.exe` 실행 후 `AUTO DETECT & CONFIGURE` 버튼 클릭 시 GPU별 `-d`, `--nexapow-small-lut`, `--multi-device-arg-mode` 인자가 기대대로 세팅되는지 확인.
