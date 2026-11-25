@@ -1,0 +1,23 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 16:45 ~ 16:47 KST
+- 작업 목표: `AUTO DETECT & CONFIGURE`뿐만 아니라 앱 시작(`MainViewModel` 생성자) 시에도 풀·알고리즘·지갑 주소가 비어 있으면 사용자 기본 지갑과 기본 풀·알고리즘으로 자동 채워지도록 보완(補完)
+- 작업 결과: 성공 (`dotnet build -c Release` 경고 0개·오류 0개, 퍼블리시 및 운영 폴더 배포·SHA-256 일치 검증 완료)
+- Commit ID: `46b6d17`
+
+2. 변경 내역 (Changes)
+- [뷰모델] `ViewModels/MainViewModel.cs`
+  * `MainViewModel()` 생성자에서 `ApplyFactoryDefaults(overwrite: false)` 호출 추가: 풀·알고리즘·지갑·추가인자가 비어 있으면 사용자 기본값(`ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA`, `rx` / `rx-asia.unmineable.com:443`, `nexapow` / `nexapow-asia.unmineable.com:443`)으로 보완하고 기존 값이 있으면 유지
+  * `HasWorkerSuffix()` 헬퍼 추가: 지갑이 기본값으로 새로 채워졌거나 워커명이 없을 때만 `.{MachineName}_CPU` / `_GPU` 부착
+- [빌드·퍼블리시·운영 배포]
+  * `dotnet build -c Release`: 경고 0개, 오류 0개
+  * `bin\Publish_win-x64\EncryptionMinerControl.exe`: `173,418,554 bytes`, SHA-256 `488A1AB0E09F4B1BECCB2E1AA251CEB61FC626DF63663D80AA73F1EA3C5C76B5`
+  * `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125_4` 백업 후 배포 (`HashMatch=True`), `settings.json` 및 `Miners\` 보존
+
+3. 결정 근거 (Rationale)
+- 새 PC에서 `settings.json`이 없거나 일부 필드가 누락된 채 앱을 처음 실행했을 때 버튼을 누르기 전에도 즉시 유효한 풀·알고리즘·지갑 상태가 되도록 생성자 단계로 보완 범위를 확장함.
+
+4. 미해결 이슈 (Issues)
+- 빈 `settings.json` 환경에서의 첫 기동 테스트는 추후 신규 PC 배포 시 확인 필요.
+
+5. 다음 단계 (Next Step)
+- 운영 폴더의 `EncryptionMinerControl.exe` 실행(관리자 권한 권장) 후 정상 채굴 동작 확인.
