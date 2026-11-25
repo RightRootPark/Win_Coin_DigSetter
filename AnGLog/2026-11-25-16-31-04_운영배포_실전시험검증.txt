@@ -1,0 +1,28 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 16:26 ~ 16:31 KST
+- 작업 목표: 운영 폴더(`C:\DTshare\Utility\EncryptionMinerControl_Release260202`)에 신규 `EncryptionMinerControl.exe` 배포 및 앱·Rigel·XMRig 실전 동작 시험 검증(檢證)
+- 작업 결과: 성공 (SHA-256 일치 배포, 앱 기동 스모크 테스트 통과, Rigel·XMRig 실전 시험 정상 동작 확인)
+- Commit ID: `9e3322f` / `81fc277` (배포된 바이너리의 소스 기준 커밋)
+
+2. 변경 내역 (Changes)
+- [운영 백업] `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125_2` (`173,389,882 bytes`)
+- [운영 배포] `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe` (`173,414,458 bytes`)
+  * SHA-256: `C4496FE6B47D65C0AC1CC0E3965C044AABAFF44A8998F8A172426A73E6DDA453` (`HashMatch=True`)
+- [스모크 테스트] `EncryptionMinerControl.exe` 7초 직접 기동 검증: `ALIVE=True`, `HasExited=False`, `Responding=True` (Stealth 모드 설정으로 창 숨김 상태 정상 응답 확인 후 종료)
+- [Rigel 90초 시험] `test_rigel_fan100.log` (`nexapow`, `tc[80-90]tm[105-115]`, `--fan-control 100`, `--nexapow-small-lut on`)
+  * 해시레이트: `6.957` -> `6.920` -> `6.785 MH/s` (연속 채굴 유지, `overheated` 0건)
+  * `nvidia-smi` (90초 시점): `fan.speed 43%`, `temperature.gpu 68°C`, `power.draw 77.90 W`, `memory.used 2702 MiB`
+  * 비관리자 세션(`CurrentSessionIsAdmin=False`) 실행으로 `--fan-control 100`은 `NoPermission` 로그 출력 후 드라이버 기본 팬 곡선(35%->43%)으로 계속 동작
+- [XMRig 25초 시험] `test_xmrig_hugejit.log` (`--cpu-max-threads-hint=30`, `--huge-pages-jit`)
+  * `HUGE PAGES permission granted`, `READY threads 5/5 (5) huge pages 100% 5/5`, `2290.1 H/s` (10s) 확인
+  * 비관리자 세션 실행으로 `msr: Administrator privileges required` 로그 확인
+
+3. 결정 근거 (Rationale)
+- 사용자 앱 종료 확인 후 기존 바이너리를 안전 백업(`.bak_20261125_2`)하고 신규 퍼블리시 파일로 교체 및 SHA-256 검증을 수행함.
+- 비관리자 권한에서 `--fan-control 100`과 XMRig MSR이 권한 제약(`NoPermission` / `Administrator privileges required`)을 받음을 실측(實測)으로 확인해, 실제 운영 시 앱 내 관리자 재시작/작업 스케줄러 자동 시작 사용의 필요성을 명확히 입증함.
+
+4. 미해결 이슈 (Issues)
+- 비관리자 세션 한계: 이번 에이전트 시험 세션은 일반 사용자 권한이라 관리자 전용 기능(`--fan-control 100` 실제 팬 100% 적용 및 XMRig MSR 레지스터 적용)은 앱 실행 후 Settings의 `RESTART AS ADMIN` 버튼 또는 `Run at Windows Startup as Admin` 체크박스를 통해 최종 확인 필요.
+
+5. 다음 단계 (Next Step)
+- `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe`를 실행하고, Settings 탭에서 `RESTART AS ADMIN`(및 필요 시 `Run at Windows Startup as Admin` 체크)을 눌러 관리자 권한으로 구동한 뒤 팬 100% 및 MSR 적용 상태를 확인.
