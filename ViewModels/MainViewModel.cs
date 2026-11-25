@@ -244,6 +244,19 @@ public class MainViewModel : INotifyPropertyChanged
         XmrigMiner = new MinerViewModel(xmrigConfig);
         RigelMiner = new MinerViewModel(rigelConfig);
 
+        // Fill missing pool/algorithm/wallet with user defaults on startup / 시작 시 풀·알고리즘·지갑 누락분 자동 보완
+        bool hadXmrigWallet = !string.IsNullOrWhiteSpace(XmrigMiner.Config.WalletAddress);
+        bool hadRigelWallet = !string.IsNullOrWhiteSpace(RigelMiner.Config.WalletAddress);
+        ApplyFactoryDefaults(overwrite: false);
+        if (!hadXmrigWallet || !HasWorkerSuffix(XmrigMiner.Config.WalletAddress))
+        {
+            XmrigMiner.Config.WalletAddress = NormalizeWalletWorker(XmrigMiner.Config.WalletAddress, $".{Environment.MachineName}_CPU");
+        }
+        if (!hadRigelWallet || !HasWorkerSuffix(RigelMiner.Config.WalletAddress))
+        {
+            RigelMiner.Config.WalletAddress = NormalizeWalletWorker(RigelMiner.Config.WalletAddress, $".{Environment.MachineName}_GPU");
+        }
+
         // Idle Timer (1Hz)
         _idleTimer = new System.Windows.Threading.DispatcherTimer();
         _idleTimer.Interval = TimeSpan.FromSeconds(1);
@@ -585,6 +598,15 @@ public class MainViewModel : INotifyPropertyChanged
             RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[80-90]tm[105-115] --fan-control 100 --nexapow-small-lut on";
         if (overwrite)
             RigelMiner.Config.Enabled = true;
+    }
+
+    private static bool HasWorkerSuffix(string wallet)
+    {
+        if (string.IsNullOrWhiteSpace(wallet)) return false;
+        int hashIdx = wallet.IndexOf('#');
+        string basePart = hashIdx >= 0 ? wallet[..hashIdx] : wallet;
+        int colonIdx = basePart.IndexOf(':');
+        return basePart.IndexOf('.', Math.Max(0, colonIdx + 1)) > 0;
     }
 
     private static string NormalizeWalletWorker(string wallet, string suffix)
