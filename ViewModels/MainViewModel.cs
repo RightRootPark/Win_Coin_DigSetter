@@ -536,27 +536,48 @@ public class MainViewModel : INotifyPropertyChanged
                 RigelMiner.Config.WalletAddress = NormalizeWalletWorker(RigelMiner.Config.WalletAddress, $".{machineName}_GPU");
             }
 
-            // 3. NVIDIA GPU & VRAM Detection
-            var (gpuFound, gpuName, vramMiB) = DetectNvidiaGpu();
+            // 3. Multi-GPU NVIDIA & VRAM Detection
+            var gpus = DetectNvidiaGpus();
+            var usableGpus = gpus.Where(g => g.VramMiB >= 2800).ToList();
             string gpuSummary;
-            if (!gpuFound || vramMiB < 2800)
+
+            if (usableGpus.Count == 0)
             {
                 RigelMiner.Config.Enabled = false;
-                gpuSummary = gpuFound
-                    ? $"Disabled ({gpuName}, {vramMiB} MiB < 3GB)"
+                gpuSummary = gpus.Count > 0
+                    ? $"Disabled ({gpus.Count} GPU(s) detected, all < 3GB VRAM)"
                     : "Disabled (No NVIDIA GPU detected)";
-            }
-            else if (vramMiB <= 4500)
-            {
-                RigelMiner.Config.Enabled = true;
-                RigelMiner.Config.ExtraArguments = SetSmallLutFlag(RigelMiner.Config.ExtraArguments, enable: true);
-                gpuSummary = $"Enabled ({gpuName}, {vramMiB} MiB, small-lut ON)";
             }
             else
             {
                 RigelMiner.Config.Enabled = true;
-                RigelMiner.Config.ExtraArguments = SetSmallLutFlag(RigelMiner.Config.ExtraArguments, enable: false);
-                gpuSummary = $"Enabled ({gpuName}, {vramMiB} MiB, big-lut)";
+
+                // Filter out < 3GB cards if mixed / 저용량 GPU 혼재 시 채굴 가능 장치 인덱스(-d)만 지정
+                if (usableGpus.Count < gpus.Count)
+                {
+                    string devicesArg = string.Join(",", usableGpus.Select(g => g.Index));
+                    RigelMiner.Config.ExtraArguments = SetRigelOptionValue(RigelMiner.Config.ExtraArguments, "-d", @"(?:-d|--devices)", devicesArg);
+                }
+
+                // Configure per-GPU small-lut / GPU별 VRAM 크기에 맞춰 small-lut 설정 (예: on 또는 on,off)
+                bool anySmall = usableGpus.Any(g => g.VramMiB <= 4500);
+                string? lutArg = !anySmall
+                    ? null
+                    : (usableGpus.Count == 1
+                        ? "on"
+                        : string.Join(",", usableGpus.Select(g => g.VramMiB <= 4500 ? "on" : "off")));
+                RigelMiner.Config.ExtraArguments = SetRigelOptionValue(RigelMiner.Config.ExtraArguments, "--nexapow-small-lut", @"--nexapow-small-lut", lutArg);
+
+                // Ensure single thermal/fan values apply across all GPUs / 멀티 GPU 환경에서 단일 온도·팬 설정 일괄 적용
+                if (usableGpus.Count > 1 &&
+                    !RigelMiner.Config.ExtraArguments.Contains("--multi-device-arg-mode", StringComparison.OrdinalIgnoreCase))
+                {
+                    RigelMiner.Config.ExtraArguments = SetRigelOptionValue(RigelMiner.Config.ExtraArguments, "--multi-device-arg-mode", @"--multi-device-arg-mode", "first");
+                }
+
+                string lutDesc = lutArg == null ? "big-lut" : $"small-lut {lutArg}";
+                string gpuLines = string.Join("\n  ", usableGpus.Select(g => $"GPU#{g.Index}: {g.Name} ({g.VramMiB} MiB)"));
+                gpuSummary = $"Enabled ({usableGpus.Count}/{gpus.Count} usable, {lutDesc})\n  {gpuLines}";
             }
 
             SaveConfig(showNotification: false);
@@ -634,28 +655,32 @@ public class MainViewModel : INotifyPropertyChanged
         return string.IsNullOrWhiteSpace(args) ? replacement : $"{args.Trim()} {replacement}";
     }
 
-    private static string SetSmallLutFlag(string args, bool enable)
+    private static string SetRigelOptionValue(string args, string flagToken, string flagRegex, string? value)
     {
         string cleaned = System.Text.RegularExpressions.Regex.Replace(
             args ?? string.Empty,
-            @"(?:^|\s)--nexapow-small-lut(?:\s+(?:on|off)|=(?:on|off))?",
+            $@"(?:^|\s){flagRegex}(?:=|\s+)(?:""[^""]+""|\S+)",
             string.Empty,
             System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
 
         cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\s{2,}", " ");
-        if (!enable) return cleaned;
-        return string.IsNullOrWhiteSpace(cleaned) ? "--nexapow-small-lut on" : $"{cleaned} --nexapow-small-lut on";
+        if (string.IsNullOrWhiteSpace(value)) return cleaned;
+
+        string token = $"{flagToken} {value.Trim()}";
+        return string.IsNullOrEmpty(cleaned) ? token : $"{cleaned} {token}";
     }
 
-    private static (bool Found, string Name, int VramMiB) DetectNvidiaGpu()
+    private static List<(int Index, string Name, int VramMiB)> DetectNvidiaGpus()
     {
-        // 1. Prefer nvidia-smi for exact VRAM > 4GB (avoids WMI uint32 4GB cap) / 4GB 이상 정확한 VRAM 조회를 위해 nvidia-smi 우선 사용
+        var result = new List<(int Index, string Name, int VramMiB)>();
+
+        // 1. Prefer nvidia-smi for multi-GPU index and exact VRAM > 4GB / 멀티 GPU 인덱스 및 4GB 이상 정확한 VRAM 조회를 위해 nvidia-smi 우선 사용
         try
         {
             using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
                 FileName = "nvidia-smi",
-                Arguments = "--query-gpu=name,memory.total --format=csv,noheader,nounits",
+                Arguments = "--query-gpu=index,name,memory.total --format=csv,noheader,nounits",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
@@ -667,28 +692,19 @@ public class MainViewModel : INotifyPropertyChanged
                 proc.WaitForExit(4000);
                 if (proc.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
                 {
-                    bool anyFound = false;
-                    string bestName = string.Empty;
-                    int bestVram = 0;
-
                     foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
                     {
                         var parts = line.Split(',');
-                        if (parts.Length < 2) continue;
+                        if (parts.Length < 3) continue;
 
-                        string gpuName = parts[0].Trim();
-                        if (int.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int vramMiB))
+                        if (int.TryParse(parts[0].Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int idx) &&
+                            int.TryParse(parts[2].Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int vramMiB))
                         {
-                            if (!anyFound || vramMiB > bestVram)
-                            {
-                                anyFound = true;
-                                bestName = gpuName;
-                                bestVram = vramMiB;
-                            }
+                            result.Add((idx, parts[1].Trim(), vramMiB));
                         }
                     }
 
-                    if (anyFound) return (true, bestName, bestVram);
+                    if (result.Count > 0) return result;
                 }
             }
         }
@@ -699,6 +715,7 @@ public class MainViewModel : INotifyPropertyChanged
         {
             try
             {
+                int idx = 0;
                 using var searcher = new System.Management.ManagementObjectSearcher("SELECT Name, AdapterRAM FROM Win32_VideoController");
                 foreach (var obj in searcher.Get())
                 {
@@ -711,7 +728,7 @@ public class MainViewModel : INotifyPropertyChanged
                             ulong bytes = Convert.ToUInt64(obj["AdapterRAM"], System.Globalization.CultureInfo.InvariantCulture);
                             vramMiB = (int)(bytes / (1024UL * 1024UL));
                         }
-                        return (true, name, vramMiB);
+                        result.Add((idx++, name, vramMiB));
                     }
                 }
             }
@@ -721,7 +738,7 @@ public class MainViewModel : INotifyPropertyChanged
             }
         }
 
-        return (false, string.Empty, 0);
+        return result;
     }
 
     private void ResetToBatchDefaults()

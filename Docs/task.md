@@ -104,3 +104,7 @@
     - [x] `MinerOptionItem.cs` 모델 추가 (체크박스 + 값 입력 TextBox + `ExtraArguments` 양방향 동기화)
     - [x] `MinerViewModel.cs` XMRig 12종·Rigel 15종 전체 옵션 등록
     - [x] `MainWindow.xaml` 공유 `MinerOptionRowTemplate` 적용 및 `Extra Arguments` 하단 유지
+- [x] 멀티 GPU 대응: 다중 NVIDIA GPU 자동 감지 및 설정 (2026-11-25) <!-- id: 30 -->
+    - [x] `DetectNvidiaGpus()`로 전체 NVIDIA GPU(인덱스·모델·VRAM) 수집 및 2GB 이하 혼재 시 `-d` 자동 필터링
+    - [x] GPU별 `small-lut` (`on,off` 등) 및 `--multi-device-arg-mode first` 자동 적용
+    - [x] `MinerViewModel.cs`에 `Multi-GPU Arg Mode` 옵션 추가 및 `NexaPow Small LUT` 값 입력형 확장

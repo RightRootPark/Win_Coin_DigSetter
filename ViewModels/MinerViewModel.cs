@@ -251,21 +251,14 @@ public class MinerViewModel : INotifyPropertyChanged
     {
         return
         [
-            MakeValueOption("Temp Limit (--temp-limit)", "코어/메모리 온도 상하한 (예: tc[80-90]tm[105-115])", MinerOptionKind.SpaceValue, "--temp-limit", @"--temp-limit", "tc[80-90]tm[105-115]", "tc[80-90]tm[105-115]"),
-            MakeValueOption("Fan Control (Admin)", "팬 속도 고정 또는 자동 목표 온도 (관리자 권한 필요)", MinerOptionKind.SpaceValue, "--fan-control", @"--fan-control", "100", "100 또는 t:[65;_][50;45-75]"),
-            new MinerOptionItem
-            {
-                Label = "NexaPow Small LUT (3~4GB)",
-                Description = "3~4GB GPU에서 NexaPow 메모리 스와핑 방지 (--nexapow-small-lut on)",
-                Kind = MinerOptionKind.PairFlag,
-                FlagToken = "--nexapow-small-lut on",
-                ParsePattern = @"(?:^|\s)--nexapow-small-lut(?:\s+|=)on(?=\s|$)",
-                RemovePattern = @"(?:^|\s)--nexapow-small-lut(?:\s+(?:on|off)|=(?:on|off))?(?=\s|$)"
-            },
-            MakeValueOption("Power Limit W (Admin)", "GPU 소비전력 상한(Watt, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--pl", @"--pl", "70", "예: 70"),
-            MakeValueOption("Lock Core Clock MHz (Admin)", "GPU 코어 클럭 고정(MHz, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--lock-cclock", @"--lock-cclock", "1500", "예: 1500"),
-            MakeValueOption("Core Clock Offset (Admin)", "GPU 코어 클럭 오프셋(MHz, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--cclock", @"--cclock", "0", "예: +100"),
-            MakeValueOption("Mem Clock Offset (Admin)", "GPU 메모리 클럭 오프셋(MHz, 관리자 권한 필요)", MinerOptionKind.SpaceValue, "--mclock", @"--mclock", "0", "예: +500"),
+            MakeValueOption("Temp Limit (--temp-limit)", "코어/메모리 온도 상하한 (단일: tc[80-90]tm[105-115], 멀티GPU: 쉼표 구분)", MinerOptionKind.SpaceValue, "--temp-limit", @"--temp-limit", "tc[80-90]tm[105-115]", "tc[80-90]tm[105-115]"),
+            MakeValueOption("Fan Control (Admin)", "팬 속도/자동 온도 제어 (관리자 필요, 멀티GPU 쉼표 구분 예: 100,80)", MinerOptionKind.SpaceValue, "--fan-control", @"--fan-control", "100", "100 또는 t:[65;_][50;45-75]"),
+            MakeValueOption("NexaPow Small LUT", "3~4GB GPU 필수 (단일: on / 멀티GPU 이기종 예: on,off)", MinerOptionKind.SpaceValue, "--nexapow-small-lut", @"--nexapow-small-lut", "on", "on 또는 멀티GPU: on,off"),
+            MakeValueOption("Multi-GPU Arg Mode", "멀티 GPU 인자 개수 불일치 처리 (first: 첫 값 일괄 적용, match, last)", MinerOptionKind.SpaceValue, "--multi-device-arg-mode", @"--multi-device-arg-mode", "first", "first / match / last"),
+            MakeValueOption("Power Limit W (Admin)", "GPU 소비전력 상한(Watt, 관리자 필요, 멀티GPU 쉼표 구분 예: 70,120)", MinerOptionKind.SpaceValue, "--pl", @"--pl", "70", "예: 70 또는 70,120"),
+            MakeValueOption("Lock Core Clock MHz (Admin)", "GPU 코어 클럭 고정(MHz, 관리자 필요, 멀티GPU 쉼표 구분)", MinerOptionKind.SpaceValue, "--lock-cclock", @"--lock-cclock", "1500", "예: 1500"),
+            MakeValueOption("Core Clock Offset (Admin)", "GPU 코어 클럭 오프셋(MHz, 관리자 필요, 멀티GPU 쉼표 구분)", MinerOptionKind.SpaceValue, "--cclock", @"--cclock", "0", "예: +100"),
+            MakeValueOption("Mem Clock Offset (Admin)", "GPU 메모리 클럭 오프셋(MHz, 관리자 필요, 멀티GPU 쉼표 구분)", MinerOptionKind.SpaceValue, "--mclock", @"--mclock", "0", "예: +500"),
             MakeValueOption("GPU Devices (-d)", "채굴에 사용할 GPU 번호 (쉼표 구분)", MinerOptionKind.SpaceValue, "-d", @"(?:-d|--devices)", "0", "예: 0 또는 0,1"),
             MakeValueOption("Stats Interval (s)", "GPU 상태 및 해시 출력 주기(초)", MinerOptionKind.SpaceValue, "--stats-interval", @"--stats-interval", "600", "60 ~ 600"),
             MakeValueOption("Log File (--log-file)", "Rigel 로그 저장 파일명 (5MB 자동 로테이션)", MinerOptionKind.QuotedSpaceValue, "--log-file", @"(?:--log-file|-l)", "rigel_1060_nexapow_log.txt", "rigel_1060_nexapow_log.txt"),
