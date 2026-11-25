@@ -92,3 +92,7 @@
     - [x] `ProcessManager.cs`/`MinerViewModel.cs` 크래시 감지·30초 자동 복구 및 풀 오류/30분 No Share 감시·트레이 알림 추가
     - [x] `UnmineableService.cs` 기반 Dashboard 잔고/출금 진행률/온라인 워커 표시 추가
     - [x] Monitoring 탭 `CLEAR`/`OPEN LOG` 버튼, 동적 Idle 안내 문구, 빌드 경고(CS0414) 및 중복 알림 정리
+- [x] 자동 설정 고도화: 스마트 `AutoConfigure` 업그레이드 (2026-11-25) <!-- id: 27 -->
+    - [x] 빈 설정 기본값 자동 보완 및 기존 워커명 정규화(`NormalizeWalletWorker`)
+    - [x] RAM(6GB 기준)에 따른 XMRig `fast`/`light` 자동 전환
+    - [x] `nvidia-smi`+WMI 기반 VRAM 감지: 미장착/<2.8GB 시 Rigel 자동 OFF, 3~4GB `--nexapow-small-lut on` 자동 적용, >4.5GB `big-lut` 자동 전환

@@ -481,8 +481,12 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void AutoConfigure()
     {
-        try 
+        try
         {
+            // Fill empty fields with defaults so new PCs work in one click / 빈 설정에서도 기본값 자동 보완
+            ApplyFactoryDefaults(overwrite: false);
+            XmrigMiner.Config.Enabled = true;
+
             // 1. Find Executables
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             string minersDir = Path.Combine(baseDir, "Miners");
@@ -496,86 +500,60 @@ public class MainViewModel : INotifyPropertyChanged
                 if (!string.IsNullOrEmpty(rigelExe)) RigelMiner.Config.ExecutablePath = rigelExe;
             }
 
-            // 2. CPU Optimization
+            // 2. CPU & RAM Optimization
             int coreCount = Environment.ProcessorCount;
-            int threads = (int)(coreCount * 0.75);
-            if (threads < 1) threads = 1;
-            
-            if (!XmrigMiner.Config.ExtraArguments.Contains("--cpu-max-threads-hint"))
+            int threads = Math.Max(1, (int)(coreCount * 0.75));
+            if (!XmrigMiner.Config.ExtraArguments.Contains("--cpu-max-threads-hint", StringComparison.OrdinalIgnoreCase))
             {
-                 XmrigMiner.Config.ExtraArguments += $" --cpu-max-threads-hint={threads * 100 / coreCount}"; 
+                XmrigMiner.Config.ExtraArguments = $"{XmrigMiner.Config.ExtraArguments} --cpu-max-threads-hint={threads * 100 / coreCount}".Trim();
             }
 
-            // 2.5 Wallet Name Append
+            double totalRamGb = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes / (1024.0 * 1024.0 * 1024.0);
+            string randomXMode = (totalRamGb > 0 && totalRamGb < 6.0) ? "light" : "fast";
+            XmrigMiner.Config.ExtraArguments = SetRandomXMode(XmrigMiner.Config.ExtraArguments, randomXMode);
+
+            // 2.5 Normalize Worker Suffixes
             string machineName = Environment.MachineName;
-            if (!string.IsNullOrEmpty(XmrigMiner.Config.WalletAddress))
+            if (!string.IsNullOrWhiteSpace(XmrigMiner.Config.WalletAddress))
             {
-                 string suffix = $".{machineName}_CPU";
-                 if (!XmrigMiner.Config.WalletAddress.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                 {
-                     // Remove old suffix if present (simple check)
-                     if (XmrigMiner.Config.WalletAddress.EndsWith($".{machineName}", StringComparison.OrdinalIgnoreCase))
-                     {
-                         XmrigMiner.Config.WalletAddress = XmrigMiner.Config.WalletAddress.Replace($".{machineName}", suffix);
-                     }
-                     else
-                     {
-                         XmrigMiner.Config.WalletAddress += suffix;
-                     }
-                 }
+                XmrigMiner.Config.WalletAddress = NormalizeWalletWorker(XmrigMiner.Config.WalletAddress, $".{machineName}_CPU");
+            }
+            if (!string.IsNullOrWhiteSpace(RigelMiner.Config.WalletAddress))
+            {
+                RigelMiner.Config.WalletAddress = NormalizeWalletWorker(RigelMiner.Config.WalletAddress, $".{machineName}_GPU");
             }
 
-            if (!string.IsNullOrEmpty(RigelMiner.Config.WalletAddress))
+            // 3. NVIDIA GPU & VRAM Detection
+            var (gpuFound, gpuName, vramMiB) = DetectNvidiaGpu();
+            string gpuSummary;
+            if (!gpuFound || vramMiB < 2800)
             {
-                 string suffix = $".{machineName}_GPU";
-                 if (!RigelMiner.Config.WalletAddress.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
-                 {
-                     // Remove old suffix if present
-                     if (RigelMiner.Config.WalletAddress.EndsWith($".{machineName}", StringComparison.OrdinalIgnoreCase))
-                     {
-                         RigelMiner.Config.WalletAddress = RigelMiner.Config.WalletAddress.Replace($".{machineName}", suffix);
-                     }
-                     else
-                     {
-                         RigelMiner.Config.WalletAddress += suffix;
-                     }
-                 }
+                RigelMiner.Config.Enabled = false;
+                gpuSummary = gpuFound
+                    ? $"Disabled ({gpuName}, {vramMiB} MiB < 3GB)"
+                    : "Disabled (No NVIDIA GPU detected)";
+            }
+            else if (vramMiB <= 4500)
+            {
+                RigelMiner.Config.Enabled = true;
+                RigelMiner.Config.ExtraArguments = SetSmallLutFlag(RigelMiner.Config.ExtraArguments, enable: true);
+                gpuSummary = $"Enabled ({gpuName}, {vramMiB} MiB, small-lut ON)";
+            }
+            else
+            {
+                RigelMiner.Config.Enabled = true;
+                RigelMiner.Config.ExtraArguments = SetSmallLutFlag(RigelMiner.Config.ExtraArguments, enable: false);
+                gpuSummary = $"Enabled ({gpuName}, {vramMiB} MiB, big-lut)";
             }
 
-            // 3. GPU Detection
-            if (OperatingSystem.IsWindows())
-            {
-                bool hasNvidia = false;
-                try 
-                {
-                    // [Korea] WMI 안정성 강화: 일부 윈도우(Lite, Gaming)에서 WMI가 손상된 경우 방어
-                    using (var searcher = new System.Management.ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
-                    {
-                        foreach (var obj in searcher.Get())
-                        {
-                            string name = obj["Name"]?.ToString() ?? "";
-                            if (name.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
-                            {
-                                hasNvidia = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                { 
-                    // WMI failed - possibly no GPU or broken OS components.
-                    System.Diagnostics.Debug.WriteLine($"[WMI Error] {ex.Message}");
-                }
-
-                if (hasNvidia)
-                {
-                    RigelMiner.Config.Enabled = true;
-                }
-            }
-            
-            System.Windows.MessageBox.Show($"Auto-configuration completed!\nWallet Updated: Yes\nCPU Hint: {threads} threads");
-            SaveConfig(); // Save updates
+            SaveConfig();
+            string ramText = totalRamGb > 0 ? $"{totalRamGb:F1} GB" : "Unknown";
+            System.Windows.MessageBox.Show(
+                $"Auto-configuration completed!\n" +
+                $"RAM: {ramText} (RandomX mode: {randomXMode})\n" +
+                $"CPU Hint: {threads} / {coreCount} threads\n" +
+                $"GPU: {gpuSummary}\n" +
+                $"Workers: .{machineName}_CPU / _GPU");
         }
         catch (Exception ex)
         {
@@ -583,24 +561,152 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private void ApplyFactoryDefaults(bool overwrite)
+    {
+        if (overwrite || string.IsNullOrWhiteSpace(XmrigMiner.Config.Algorithm))
+            XmrigMiner.Config.Algorithm = "rx";
+        if (overwrite || string.IsNullOrWhiteSpace(XmrigMiner.Config.PoolUrl))
+            XmrigMiner.Config.PoolUrl = "stratum+ssl://rx-asia.unmineable.com:443";
+        if (overwrite || string.IsNullOrWhiteSpace(XmrigMiner.Config.WalletAddress))
+            XmrigMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_dt_cpu";
+        if (overwrite || string.IsNullOrWhiteSpace(XmrigMiner.Config.ExtraArguments))
+            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --huge-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true";
+        if (overwrite)
+            XmrigMiner.Config.Enabled = true;
+
+        // Rigel Defaults (Updated with tc[80-90] and --fan-control 100 per user confirmation on 2026-11-25)
+        if (overwrite || string.IsNullOrWhiteSpace(RigelMiner.Config.Algorithm))
+            RigelMiner.Config.Algorithm = "nexapow";
+        if (overwrite || string.IsNullOrWhiteSpace(RigelMiner.Config.PoolUrl))
+            RigelMiner.Config.PoolUrl = "stratum+ssl://nexapow-asia.unmineable.com:443";
+        if (overwrite || string.IsNullOrWhiteSpace(RigelMiner.Config.WalletAddress))
+            RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU";
+        if (overwrite || string.IsNullOrWhiteSpace(RigelMiner.Config.ExtraArguments))
+            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[80-90]tm[105-115] --fan-control 100 --nexapow-small-lut on";
+        if (overwrite)
+            RigelMiner.Config.Enabled = true;
+    }
+
+    private static string NormalizeWalletWorker(string wallet, string suffix)
+    {
+        int hashIdx = wallet.IndexOf('#');
+        string basePart = hashIdx >= 0 ? wallet[..hashIdx] : wallet;
+        string refPart = hashIdx >= 0 ? wallet[hashIdx..] : string.Empty;
+
+        int colonIdx = basePart.IndexOf(':');
+        int dotIdx = basePart.IndexOf('.', Math.Max(0, colonIdx + 1));
+        string cleanBase = dotIdx > 0 ? basePart[..dotIdx] : basePart;
+
+        return $"{cleanBase.Trim()}{suffix}{refPart}";
+    }
+
+    private static string SetRandomXMode(string args, string mode)
+    {
+        const string pattern = @"--randomx-mode=\S+";
+        string replacement = $"--randomx-mode={mode}";
+        if (System.Text.RegularExpressions.Regex.IsMatch(args, pattern, System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+        {
+            return System.Text.RegularExpressions.Regex.Replace(args, pattern, replacement, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+        return string.IsNullOrWhiteSpace(args) ? replacement : $"{args.Trim()} {replacement}";
+    }
+
+    private static string SetSmallLutFlag(string args, bool enable)
+    {
+        string cleaned = System.Text.RegularExpressions.Regex.Replace(
+            args ?? string.Empty,
+            @"(?:^|\s)--nexapow-small-lut(?:\s+(?:on|off)|=(?:on|off))?",
+            string.Empty,
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+
+        cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\s{2,}", " ");
+        if (!enable) return cleaned;
+        return string.IsNullOrWhiteSpace(cleaned) ? "--nexapow-small-lut on" : $"{cleaned} --nexapow-small-lut on";
+    }
+
+    private static (bool Found, string Name, int VramMiB) DetectNvidiaGpu()
+    {
+        // 1. Prefer nvidia-smi for exact VRAM > 4GB (avoids WMI uint32 4GB cap) / 4GB 이상 정확한 VRAM 조회를 위해 nvidia-smi 우선 사용
+        try
+        {
+            using var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "nvidia-smi",
+                Arguments = "--query-gpu=name,memory.total --format=csv,noheader,nounits",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            });
+            if (proc != null)
+            {
+                string output = proc.StandardOutput.ReadToEnd();
+                proc.WaitForExit(4000);
+                if (proc.ExitCode == 0 && !string.IsNullOrWhiteSpace(output))
+                {
+                    bool anyFound = false;
+                    string bestName = string.Empty;
+                    int bestVram = 0;
+
+                    foreach (var line in output.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        var parts = line.Split(',');
+                        if (parts.Length < 2) continue;
+
+                        string gpuName = parts[0].Trim();
+                        if (int.TryParse(parts[1].Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int vramMiB))
+                        {
+                            if (!anyFound || vramMiB > bestVram)
+                            {
+                                anyFound = true;
+                                bestName = gpuName;
+                                bestVram = vramMiB;
+                            }
+                        }
+                    }
+
+                    if (anyFound) return (true, bestName, bestVram);
+                }
+            }
+        }
+        catch { /* Fallback to WMI */ }
+
+        // 2. WMI Fallback
+        if (OperatingSystem.IsWindows())
+        {
+            try
+            {
+                using var searcher = new System.Management.ManagementObjectSearcher("SELECT Name, AdapterRAM FROM Win32_VideoController");
+                foreach (var obj in searcher.Get())
+                {
+                    string name = obj["Name"]?.ToString() ?? string.Empty;
+                    if (name.Contains("NVIDIA", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int vramMiB = 0;
+                        if (obj["AdapterRAM"] != null)
+                        {
+                            ulong bytes = Convert.ToUInt64(obj["AdapterRAM"], System.Globalization.CultureInfo.InvariantCulture);
+                            vramMiB = (int)(bytes / (1024UL * 1024UL));
+                        }
+                        return (true, name, vramMiB);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[WMI Error] {ex.Message}");
+            }
+        }
+
+        return (false, string.Empty, 0);
+    }
+
     private void ResetToBatchDefaults()
     {
         try
         {
             // 1. Apply Hardcoded Factory Defaults
-            // XMRig Defaults
-            XmrigMiner.Config.Algorithm = "rx";
-            XmrigMiner.Config.PoolUrl = "stratum+ssl://rx-asia.unmineable.com:443";
-            XmrigMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_dt_cpu"; 
-            XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --huge-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true";
-            XmrigMiner.Config.Enabled = true;
-
-            // Rigel Defaults (Updated with tc[80-90] and --fan-control 100 per user confirmation on 2026-11-25)
-            RigelMiner.Config.Algorithm = "nexapow";
-            RigelMiner.Config.PoolUrl = "stratum+ssl://nexapow-asia.unmineable.com:443";
-            RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU"; 
-            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[80-90]tm[105-115] --fan-control 100 --nexapow-small-lut on";
-            RigelMiner.Config.Enabled = true;
+            ApplyFactoryDefaults(overwrite: true);
 
             // 2. Try to find and apply local batch file settings (Override if exists)
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
