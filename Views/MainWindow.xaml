@@ -389,8 +389,14 @@
                                 <TextBox Text="{Binding XmrigMiner.Config.ExecutablePath}" materialDesign:HintAssist.Hint="Executable Path (e.g. C:\miners\xmrig.exe)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding XmrigMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (Optional, e.g. rx/0)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding XmrigMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
-                                <TextBox Text="{Binding XmrigMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
-                                <TextBox Text="{Binding XmrigMiner.Config.ExtraArguments}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding XmrigMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Options (체크박스로 전환 시 하단 Extra Arguments에 자동 반영)" FontSize="11" Opacity="0.7" Margin="0,0,0,6"/>
+                                <CheckBox Content="Huge Pages JIT (--huge-pages-jit)" IsChecked="{Binding XmrigMiner.IsXmrigHugePagesJitEnabled}" Margin="0,0,0,6"/>
+                                <CheckBox Content="RandomX Fast Mode (체크: fast / 해제: light, 4GB RAM은 해제 권장)" IsChecked="{Binding XmrigMiner.IsXmrigFastModeEnabled}" Margin="0,0,0,6"/>
+                                <CheckBox Content="Enable MSR Mod (--randomx-wrmsr --randomx-rdmsr, 관리자 권한 필요)" IsChecked="{Binding XmrigMiner.IsXmrigMsrEnabled}" Margin="0,0,0,12"/>
+
+                                <TextBox Text="{Binding XmrigMiner.Config.ExtraArguments, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" TextWrapping="Wrap" Margin="0,0,0,5"/>
                             </StackPanel>
                         </materialDesign:Card>
                         
@@ -405,10 +411,16 @@
                                 <CheckBox Content="Enable Rigel Miner" IsChecked="{Binding RigelMiner.Config.Enabled}" Margin="0,0,0,10"/>
 
                                 <TextBox Text="{Binding RigelMiner.Config.ExecutablePath}" materialDesign:HintAssist.Hint="Executable Path (e.g. C:\miners\rigel.exe)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
-                                <TextBox Text="{Binding RigelMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (e.g. alephium)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding RigelMiner.Config.Algorithm}" materialDesign:HintAssist.Hint="Algorithm (e.g. nexapow)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
                                 <TextBox Text="{Binding RigelMiner.Config.PoolUrl}" materialDesign:HintAssist.Hint="Pool URL (stratum+tcp://...)" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
-                                <TextBox Text="{Binding RigelMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
-                                <TextBox Text="{Binding RigelMiner.Config.ExtraArguments}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,10"/>
+                                <TextBox Text="{Binding RigelMiner.Config.WalletAddress}" materialDesign:HintAssist.Hint="Wallet Address" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,15"/>
+
+                                <TextBlock Text="Options (체크박스로 전환 시 하단 Extra Arguments에 자동 반영)" FontSize="11" Opacity="0.7" Margin="0,0,0,6"/>
+                                <CheckBox Content="NexaPow Small LUT (--nexapow-small-lut on, 3~4GB GPU 필수)" IsChecked="{Binding RigelMiner.IsRigelSmallLutEnabled}" Margin="0,0,0,6"/>
+                                <CheckBox Content="Max GPU Fan 100% (--fan-control 100, 관리자 권한 필요)" IsChecked="{Binding RigelMiner.IsRigelMaxFanEnabled}" Margin="0,0,0,6"/>
+                                <CheckBox Content="Disable Strict SSL (--no-strict-ssl)" IsChecked="{Binding RigelMiner.IsRigelNoStrictSslEnabled}" Margin="0,0,0,12"/>
+
+                                <TextBox Text="{Binding RigelMiner.Config.ExtraArguments, UpdateSourceTrigger=PropertyChanged}" materialDesign:HintAssist.Hint="Extra Arguments" Style="{StaticResource MaterialDesignFloatingHintTextBox}" TextWrapping="Wrap" Margin="0,0,0,5"/>
                              </StackPanel>
                         </materialDesign:Card>
                         

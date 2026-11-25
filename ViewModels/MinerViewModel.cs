@@ -126,6 +126,92 @@ public class MinerViewModel : INotifyPropertyChanged
         CopyLogsCommand = new RelayCommand(_ => CopyLogs());
         ClearLogsCommand = new RelayCommand(_ => Logs.Clear());
         OpenLogFolderCommand = new RelayCommand(_ => OpenLogFolder());
+
+        // Sync option checkboxes when ExtraArguments is edited directly / ExtraArguments 직접 수정 시 체크박스 상태 동기화
+        Config.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MinerConfig.ExtraArguments))
+            {
+                NotifyOptionFlagsChanged();
+            }
+        };
+    }
+
+    // XMRig Option Checkboxes / XMRig 주요 옵션 체크박스 바인딩
+    public bool IsXmrigHugePagesJitEnabled
+    {
+        get => HasRegexFlag(@"(?:^|\s)--huge-pages-jit(?=\s|$)");
+        set => ToggleRegexFlag(@"(?:^|\s)--huge-pages-jit(?=\s|$)", "--huge-pages-jit", value);
+    }
+
+    public bool IsXmrigFastModeEnabled
+    {
+        get => !HasRegexFlag(@"(?:^|\s)--randomx-mode=light(?=\s|$)");
+        set => SetRandomXModeFlag(value ? "fast" : "light");
+    }
+
+    public bool IsXmrigMsrEnabled
+    {
+        get => HasRegexFlag(@"(?:^|\s)--randomx-(?:wr|rd)msr(?=\s|$)");
+        set => ToggleRegexFlag(@"(?:^|\s)--randomx-(?:wr|rd)msr(?=\s|$)", "--randomx-wrmsr --randomx-rdmsr", value);
+    }
+
+    // Rigel Option Checkboxes / Rigel 주요 옵션 체크박스 바인딩
+    public bool IsRigelSmallLutEnabled
+    {
+        get => HasRegexFlag(@"(?:^|\s)--nexapow-small-lut(?:\s+|=)on(?=\s|$)");
+        set => ToggleRegexFlag(@"(?:^|\s)--nexapow-small-lut(?:\s+(?:on|off)|=(?:on|off))?(?=\s|$)", "--nexapow-small-lut on", value);
+    }
+
+    public bool IsRigelMaxFanEnabled
+    {
+        get => HasRegexFlag(@"(?:^|\s)--fan-control(?:\s+|=)100(?=\s|$)");
+        set => ToggleRegexFlag(@"(?:^|\s)--fan-control(?:\s+\S+|=\S+)?(?=\s|$)", "--fan-control 100", value);
+    }
+
+    public bool IsRigelNoStrictSslEnabled
+    {
+        get => HasRegexFlag(@"(?:^|\s)--no-strict-ssl(?=\s|$)");
+        set => ToggleRegexFlag(@"(?:^|\s)--no-strict-ssl(?=\s|$)", "--no-strict-ssl", value);
+    }
+
+    private bool HasRegexFlag(string pattern)
+    {
+        return Regex.IsMatch(Config.ExtraArguments ?? string.Empty, pattern, RegexOptions.IgnoreCase);
+    }
+
+    private void ToggleRegexFlag(string removePattern, string enableToken, bool enable)
+    {
+        string cleaned = Regex.Replace(Config.ExtraArguments ?? string.Empty, removePattern, string.Empty, RegexOptions.IgnoreCase);
+        cleaned = CleanSpaces(cleaned);
+        Config.ExtraArguments = enable
+            ? (string.IsNullOrEmpty(cleaned) ? enableToken : $"{cleaned} {enableToken}")
+            : cleaned;
+    }
+
+    private void SetRandomXModeFlag(string mode)
+    {
+        const string pattern = @"--randomx-mode=\S+";
+        string replacement = $"--randomx-mode={mode}";
+        string current = Config.ExtraArguments ?? string.Empty;
+        Config.ExtraArguments = Regex.IsMatch(current, pattern, RegexOptions.IgnoreCase)
+            ? Regex.Replace(current, pattern, replacement, RegexOptions.IgnoreCase)
+            : CleanSpaces($"{current} {replacement}");
+    }
+
+    private static string CleanSpaces(string text)
+    {
+        return Regex.Replace(text.Trim(), @"\s{2,}", " ");
+    }
+
+    private void NotifyOptionFlagsChanged()
+    {
+        OnPropertyChanged(nameof(IsXmrigHugePagesJitEnabled));
+        OnPropertyChanged(nameof(IsXmrigFastModeEnabled));
+        OnPropertyChanged(nameof(IsXmrigMsrEnabled));
+        OnPropertyChanged(nameof(IsRigelSmallLutEnabled));
+        OnPropertyChanged(nameof(IsRigelMaxFanEnabled));
+        OnPropertyChanged(nameof(IsRigelNoStrictSslEnabled));
     }
 
     // Copy all buffered miner logs to clipboard / 클립보드로 현재 로그 전체 복사

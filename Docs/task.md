@@ -96,3 +96,7 @@
     - [x] 빈 설정 기본값 자동 보완 및 기존 워커명 정규화(`NormalizeWalletWorker`)
     - [x] RAM(6GB 기준)에 따른 XMRig `fast`/`light` 자동 전환
     - [x] `nvidia-smi`+WMI 기반 VRAM 감지: 미장착/<2.8GB 시 Rigel 자동 OFF, 3~4GB `--nexapow-small-lut on` 자동 적용, >4.5GB `big-lut` 자동 전환
+- [x] UI 개선: Settings 주요 옵션 체크박스 및 저장 시 재시작 안내 (2026-11-25) <!-- id: 28 -->
+    - [x] `MinerViewModel.cs`에 XMRig/Rigel 6개 옵션 체크박스 양방향 프로퍼티 추가
+    - [x] `MainWindow.xaml` Settings 카드 내 체크박스 배치 및 `Extra Arguments` 맨 하단 배치
+    - [x] `MainViewModel.cs` `SAVE SETTINGS` 및 자동설정·초기화 완료 시 재시작 안내 알림 추가

@@ -224,7 +224,7 @@ public class MainViewModel : INotifyPropertyChanged
         // [Korea] 1. 시작 전 좀비 프로세스 청소 (이전 세션의 잔재 제거)
         CleanupZombieMiners();
 
-        SaveConfigCommand = new RelayCommand(_ => SaveConfig());
+        SaveConfigCommand = new RelayCommand(_ => SaveConfig(showNotification: true));
         AutoConfigCommand = new RelayCommand(_ => AutoConfigure());
         ResetConfigCommand = new RelayCommand(_ => ResetToBatchDefaults());
         EnterStealthModeCommand = new RelayCommand(_ => IsStealthMode = true);
@@ -559,14 +559,15 @@ public class MainViewModel : INotifyPropertyChanged
                 gpuSummary = $"Enabled ({gpuName}, {vramMiB} MiB, big-lut)";
             }
 
-            SaveConfig();
+            SaveConfig(showNotification: false);
             string ramText = totalRamGb > 0 ? $"{totalRamGb:F1} GB" : "Unknown";
             System.Windows.MessageBox.Show(
                 $"Auto-configuration completed!\n" +
                 $"RAM: {ramText} (RandomX mode: {randomXMode})\n" +
                 $"CPU Hint: {threads} / {coreCount} threads\n" +
                 $"GPU: {gpuSummary}\n" +
-                $"Workers: .{machineName}_CPU / _GPU");
+                $"Workers: .{machineName}_CPU / _GPU\n\n" +
+                $"※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요.");
         }
         catch (Exception ex)
         {
@@ -762,14 +763,14 @@ public class MainViewModel : INotifyPropertyChanged
                         if (!string.IsNullOrEmpty(wallet)) RigelMiner.Config.WalletAddress = wallet;
                     }
                 }
-                System.Windows.MessageBox.Show("Settings reset to Factory Defaults + Local Batch Files.");
+                System.Windows.MessageBox.Show("Settings reset to Factory Defaults + Local Batch Files.\n\n※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요.");
             }
             else
             {
-                System.Windows.MessageBox.Show("Settings reset to Factory Defaults (No batch files found).");
+                System.Windows.MessageBox.Show("Settings reset to Factory Defaults (No batch files found).\n\n※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요.");
             }
 
-            SaveConfig();
+            SaveConfig(showNotification: false);
         }
         catch (Exception ex)
         {
@@ -829,7 +830,7 @@ public class MainViewModel : INotifyPropertyChanged
         return new AppConfig();
     }
 
-    public void SaveConfig()
+    public void SaveConfig(bool showNotification = false)
     {
         var config = new AppConfig
         {
@@ -848,6 +849,14 @@ public class MainViewModel : INotifyPropertyChanged
         {
             string json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ConfigFile, json);
+            if (showNotification)
+            {
+                System.Windows.MessageBox.Show(
+                    "설정이 저장되었습니다.\n변경된 설정을 적용하려면 프로그램을 재시작해 주세요.",
+                    "Settings Saved",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
         }
         catch (Exception ex)
         {
