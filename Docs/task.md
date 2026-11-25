@@ -112,3 +112,6 @@
     - [x] `MainViewModel.cs` 생성자 내 `AdminHelper.IsStartupTaskRegistered()` (`schtasks.exe`) 및 `CleanupZombieMiners()` 동기 블로킹 제거 후 백그라운드 비동기화
     - [x] 백킹 필드 직접 갱신 + `_isAutoStartAdminTouched` 플래그로 불필요한 작업 스케줄러 재등록 및 경합 방지
     - [x] `IsAdmin` 프로퍼티 1회 캐싱 적용
+- [x] UX 개선: 설정 저장 안내 문구 교정 및 채굴기 자동 재시작 확인 추가 (2026-11-25) <!-- id: 32 -->
+    - [x] 프로그램 재시작 안내를 채굴기 재시작 기준(트레이/스텔스 시작 옵션만 프로그램 재시작)으로 정확히 교정
+    - [x] 저장·자동설정·초기화 시 채굴기 실행 중이면 즉시 Stop -> Start 재시작 여부를 묻는 `NotifySettingsSavedAndPromptRestart` / `RestartRunningMinersAsync` 구현

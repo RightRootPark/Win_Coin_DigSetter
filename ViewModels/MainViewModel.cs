@@ -605,13 +605,13 @@ public class MainViewModel : INotifyPropertyChanged
 
             SaveConfig(showNotification: false);
             string ramText = totalRamGb > 0 ? $"{totalRamGb:F1} GB" : "Unknown";
-            System.Windows.MessageBox.Show(
+            string autoConfigSummary =
                 $"Auto-configuration completed!\n" +
                 $"RAM: {ramText} (RandomX mode: {randomXMode})\n" +
                 $"CPU Hint: {threads} / {coreCount} threads\n" +
                 $"GPU: {gpuSummary}\n" +
-                $"Workers: .{machineName}_CPU / _GPU\n\n" +
-                $"※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요.");
+                $"Workers: .{machineName}_CPU / _GPU";
+            NotifySettingsSavedAndPromptRestart(autoConfigSummary, "Auto Configure");
         }
         catch (Exception ex)
         {
@@ -803,14 +803,14 @@ public class MainViewModel : INotifyPropertyChanged
                         if (!string.IsNullOrEmpty(wallet)) RigelMiner.Config.WalletAddress = wallet;
                     }
                 }
-                System.Windows.MessageBox.Show("Settings reset to Factory Defaults + Local Batch Files.\n\n※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요.");
+                SaveConfig(showNotification: false);
+                NotifySettingsSavedAndPromptRestart("Settings reset to Factory Defaults + Local Batch Files.", "Reset Settings");
             }
             else
             {
-                System.Windows.MessageBox.Show("Settings reset to Factory Defaults (No batch files found).\n\n※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요.");
+                SaveConfig(showNotification: false);
+                NotifySettingsSavedAndPromptRestart("Settings reset to Factory Defaults (No batch files found).", "Reset Settings");
             }
-
-            SaveConfig(showNotification: false);
         }
         catch (Exception ex)
         {
@@ -891,16 +891,77 @@ public class MainViewModel : INotifyPropertyChanged
             File.WriteAllText(ConfigFile, json);
             if (showNotification)
             {
-                System.Windows.MessageBox.Show(
-                    "설정이 저장되었습니다.\n변경된 설정을 적용하려면 프로그램을 재시작해 주세요.",
-                    "Settings Saved",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                NotifySettingsSavedAndPromptRestart("설정이 저장되었습니다.", "Settings Saved");
             }
         }
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show($"Failed to save settings: {ex.Message}");
+        }
+    }
+
+    // Prompt to restart running miners when settings are saved / 설정 저장 시 실행 중인 채굴기 즉시 재시작 여부 확인
+    private void NotifySettingsSavedAndPromptRestart(string headerMessage, string caption)
+    {
+        bool xmrigRunning = XmrigMiner.Status == "Running";
+        bool rigelRunning = RigelMiner.Status == "Running";
+
+        if (xmrigRunning || rigelRunning)
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"{headerMessage}\n\n" +
+                "현재 채굴기가 실행 중입니다.\n" +
+                "지금 채굴기를 재시작해 변경된 설정을 바로 적용할까요?\n" +
+                "(※ Start in Tray / Start in Stealth 옵션은 다음 프로그램 실행 시 적용)",
+                caption,
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                _ = RestartRunningMinersAsync(xmrigRunning, rigelRunning);
+            }
+        }
+        else
+        {
+            System.Windows.MessageBox.Show(
+                $"{headerMessage}\n\n" +
+                "변경된 채굴 설정은 다음 채굴 시작 시 자동 적용됩니다.\n" +
+                "(※ Start in Tray / Start in Stealth 옵션은 다음 프로그램 실행 시 적용)",
+                caption,
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+    }
+
+    private async Task RestartRunningMinersAsync(bool restartXmrig, bool restartRigel)
+    {
+        try
+        {
+            if (restartXmrig && XmrigMiner.Status == "Running")
+            {
+                XmrigMiner.StopCommand.Execute(null);
+            }
+            if (restartRigel && RigelMiner.Status == "Running")
+            {
+                RigelMiner.StopCommand.Execute(null);
+            }
+
+            // Wait briefly for miner process exit and GPU/log file handles release / 프로세스·파일 핸들 해제 대기
+            await Task.Delay(500);
+
+            if (restartXmrig && XmrigMiner.Config.Enabled && XmrigMiner.StartCommand.CanExecute(null))
+            {
+                XmrigMiner.StartCommand.Execute(null);
+            }
+            if (restartRigel && RigelMiner.Config.Enabled && RigelMiner.StartCommand.CanExecute(null))
+            {
+                RigelMiner.StartCommand.Execute(null);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[RestartMiners Error] {ex.Message}");
         }
     }
 
