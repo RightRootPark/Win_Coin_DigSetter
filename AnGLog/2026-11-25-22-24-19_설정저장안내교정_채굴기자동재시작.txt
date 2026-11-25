@@ -1,0 +1,33 @@
+[작업 일시]
+2026-11-25 22:22 ~ 22:25 (KST)
+
+1. 작업 요약 (Summary)
+- 시간: 2026-11-25 22:22 ~ 22:25 (KST)
+- 목표: 설정 저장 시 잘못된 "프로그램 재시작" 안내 문구 교정(校正) 및 실행 중인 채굴기 즉시 재시작 확인(2번 방식) 구현
+- 결과: 성공 (빌드 경고 0개·오류 0개, 단일 파일 퍼블리시 완료, 운영 프로세스 실행 중(PID 34184)으로 운영 파일 교체는 대기 안내)
+- Commit ID: 458a6b38abe0155dd341c8dcc3561cf252bd1100 (코드·문서)
+
+2. 변경 내역 (Changes)
+- `ViewModels/MainViewModel.cs` (+73 / -12)
+  - `NotifySettingsSavedAndPromptRestart(string headerMessage, string caption)` 추가:
+    - XMRig 또는 Rigel 중 하나라도 실행 중(`Status == "Running"`)이면 `MessageBoxButton.YesNo`로 지금 채굴기를 재시작해 변경 설정을 바로 적용할지 묻고, `Yes` 선택 시 `RestartRunningMinersAsync`를 호출하도록 구현함.
+    - 실행 중인 채굴기가 없으면 다음 채굴 시작 시 자동 적용됨을 안내하고, `Start in Tray` / `Start in Stealth` 옵션만 다음 프로그램 실행 시 적용됨을 구분해 명시함.
+  - `RestartRunningMinersAsync(bool restartXmrig, bool restartRigel)` 추가:
+    - 실행 중이던 마이너만 `StopCommand`로 중지한 뒤 `500ms` 대기 후 `Config.Enabled && StartCommand.CanExecute(null)` 조건을 만족하는 마이너만 다시 시작함.
+  - `SaveConfig(bool showNotification = false)`, `AutoConfigure()`, `ResetToBatchDefaults()` 4곳의 기존 `"※ 변경된 설정을 적용하려면 프로그램을 재시작해 주세요."` 안내를 `NotifySettingsSavedAndPromptRestart` 호출로 통합함.
+- `Docs/task.md` (+3 / -0)
+  - `id: 32` UX 개선(설정 저장 안내 문구 교정 및 채굴기 자동 재시작 확인 추가) 항목 추가.
+- 단일 파일 퍼블리시(`bin\Publish_win-x64\EncryptionMinerControl.exe`)
+  - 크기: 173,434,938 bytes, SHA-256: `36F37F1E966334C45C8CC4FF49FD9DEE6996B7C944A6319713C0D4C33E918B69`
+  - 운영 폴더(`C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe`)는 기존 프로세스(PID 34184) 실행 중이므로 강제 종료하지 않고 교체 대기 중임.
+
+3. 결정 근거 (Rationale)
+- 실제 코드상 채굴기 설정(풀, 알고리즘, 지갑, CLI 옵션, `Enabled`)은 `MinerViewModel.Start()` 호출 시점마다 `BuildArguments()`를 새로 조합하므로 프로그램 전체 재시작이 아니라 실행 중인 채굴기만 재시작하면 즉시 반영됨.
+- 자동화 설정(`Idle Mining`, `Idle Delay`, `Keep Awake`)은 즉시 반영되며, 프로그램 시작 시점 옵션(`Start in Tray`, `Start in Stealth`)만 다음 앱 실행 시 적용되므로 사용자 혼동을 없애기 위해 구분 안내함.
+- 사용자가 설정을 끄고(`Enabled = false`) 저장한 뒤 재시작을 누를 경우 다시 켜지지 않도록 `Config.Enabled && StartCommand.CanExecute(null)` 가드를 유지함.
+
+4. 미해결 이슈 (Issues)
+- 운영 중인 `EncryptionMinerControl.exe` (PID 34184)가 실행 상태여서 운영 폴더 파일 덮어쓰기를 보류함. 사용자가 프로그램 종료 후 `bin\Publish_win-x64\EncryptionMinerControl.exe`로 교체 필요함.
+
+5. 다음 단계 (Next Step)
+- 사용자가 실행 중인 `EncryptionMinerControl.exe` 종료 후 `bin\Publish_win-x64\EncryptionMinerControl.exe`를 운영 폴더(`C:\DTshare\Utility\EncryptionMinerControl_Release260202\`)에 복사해 반영하거나, 원하면 종료 확인 후 복사 지원함.
