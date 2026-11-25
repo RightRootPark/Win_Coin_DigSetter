@@ -1,0 +1,32 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 16:53 ~ 16:56 KST
+- 작업 목표: Settings 탭에서 XMRig/Rigel 주요 옵션을 체크박스로 켜고 끄며 상태를 확인하고, `Extra Arguments` 텍스트를 맨 밑에 실시간 동기화(同期化) 표시하며, 저장 시 재시작 안내 알림 추가
+- 작업 결과: 성공 (`dotnet build -c Release` 경고 0개·오류 0개, 퍼블리시 및 운영 폴더 배포·SHA-256 일치 검증 완료)
+- Commit ID: `5680c13`
+
+2. 변경 내역 (Changes)
+- [뷰모델] `ViewModels/MinerViewModel.cs`
+  * `Config.PropertyChanged` 구독으로 `ExtraArguments` 변경 시 체크박스 상태 즉시 갱신
+  * XMRig 옵션 체크박스: `IsXmrigHugePagesJitEnabled` (`--huge-pages-jit`), `IsXmrigFastModeEnabled` (`--randomx-mode=fast`/`light`), `IsXmrigMsrEnabled` (`--randomx-wrmsr --randomx-rdmsr`)
+  * Rigel 옵션 체크박스: `IsRigelSmallLutEnabled` (`--nexapow-small-lut on`), `IsRigelMaxFanEnabled` (`--fan-control 100`), `IsRigelNoStrictSslEnabled` (`--no-strict-ssl`)
+- [뷰] `Views/MainWindow.xaml`
+  * XMRig/Rigel Settings 카드 `Wallet Address` 아래에 체크박스 3개씩 배치, 각 카드 **맨 밑**에 `Extra Arguments` (`UpdateSourceTrigger=PropertyChanged`, `TextWrapping="Wrap"`) 배치
+  * Rigel `Algorithm` 힌트를 `Algorithm (e.g. nexapow)`로 정리
+- [뷰모델] `ViewModels/MainViewModel.cs`
+  * `SaveConfig(bool showNotification = false)` 확장: `SAVE SETTINGS` 클릭 시 저장 완료 및 프로그램 재시작 필요 안내 `MessageBox` 표시
+  * `AutoConfigure()`, `ResetToBatchDefaults()` 완료 `MessageBox`에도 재시작 안내 문구 추가
+- [문서] `Docs/task.md` (`id: 28` 추가)
+- [빌드·퍼블리시·운영 배포]
+  * `dotnet build -c Release`: 경고 0개, 오류 0개
+  * `bin\Publish_win-x64\EncryptionMinerControl.exe`: `173,422,650 bytes`, SHA-256 `038D3ED4F1246BFA23777EB5D1B75645C6EF3101F553B9DC5CF980DAB489B36B`
+  * `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125_5` 백업 후 배포 (`HashMatch=True`), `settings.json` 및 `Miners\` 보존
+
+3. 결정 근거 (Rationale)
+- `ExtraArguments` 문자열을 단일 진실 공급원(Single Source of Truth)으로 유지해 `settings.json` 구조 변경이나 기존 설정 호환성 깨짐 없이 체크박스와 하단 설정 텍스트를 양방향 동기화함.
+- 설정 저장 후 변경 사항이 즉시 반영되지 않고 재기동이 필요한 점을 사용자가 인지할 수 있도록 저장·자동설정·초기화 완료 시 재시작 안내를 표시함.
+
+4. 미해결 이슈 (Issues)
+- 배포된 UI에서의 체크박스 토글·저장 팝업 육안 확인은 운영 앱 실행 시 최종 확인 필요.
+
+5. 다음 단계 (Next Step)
+- 운영 폴더의 `EncryptionMinerControl.exe` 실행(관리자 권한 권장) 후 Settings 탭 체크박스·하단 `Extra Arguments` 동기화 및 `SAVE SETTINGS` 알림 확인.
