@@ -75,19 +75,21 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // Admin & Elevated Startup / 관리자 권한 확인 및 작업 스케줄러 자동 시작
-    public bool IsAdmin => AdminHelper.IsRunningAsAdmin();
+    public bool IsAdmin { get; } = AdminHelper.IsRunningAsAdmin();
     public bool IsNotAdmin => !IsAdmin;
     public string AdminStatusText => IsAdmin
         ? "Running as Administrator (MSR / GPU Fan Control Active)"
         : "Standard User (Restart as Admin for MSR & GPU Fan Control)";
 
     private bool _isAutoStartAdminEnabled;
+    private bool _isAutoStartAdminTouched;
     public bool IsAutoStartAdminEnabled
     {
         get => _isAutoStartAdminEnabled;
         set
         {
             if (_isAutoStartAdminEnabled == value) return;
+            _isAutoStartAdminTouched = true;
             var (success, message) = AdminHelper.SetStartupTask(value);
             _isAutoStartAdminEnabled = AdminHelper.IsStartupTaskRegistered();
             OnPropertyChanged();
@@ -221,16 +223,12 @@ public class MainViewModel : INotifyPropertyChanged
     
     public MainViewModel()
     {
-        // [Korea] 1. 시작 전 좀비 프로세스 청소 (이전 세션의 잔재 제거)
-        CleanupZombieMiners();
-
         SaveConfigCommand = new RelayCommand(_ => SaveConfig(showNotification: true));
         AutoConfigCommand = new RelayCommand(_ => AutoConfigure());
         ResetConfigCommand = new RelayCommand(_ => ResetToBatchDefaults());
         EnterStealthModeCommand = new RelayCommand(_ => IsStealthMode = true);
         RestartAsAdminCommand = new RelayCommand(_ => RestartAsAdmin());
         RefreshUnmineableCommand = new RelayCommand(_ => _ = RefreshUnmineableStatsAsync());
-        _isAutoStartAdminEnabled = AdminHelper.IsStartupTaskRegistered();
         
         var config = LoadConfig();
 
@@ -283,6 +281,10 @@ public class MainViewModel : INotifyPropertyChanged
         };
         
         UpdateStealthStatus(); // Initial state
+
+        // Non-blocking startup checks / 기동 지연 방지를 위한 비동기 초기화
+        _ = LoadStartupTaskStatusAsync();
+        _ = Task.Run(CleanupZombieMiners);
     }
 
     private void RestartAsAdmin()
@@ -334,13 +336,34 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    private async Task LoadStartupTaskStatusAsync()
+    {
+        try
+        {
+            bool isRegistered = await Task.Run(AdminHelper.IsStartupTaskRegistered);
+            if (!_isAutoStartAdminTouched && _isAutoStartAdminEnabled != isRegistered)
+            {
+                // Update backing field directly to avoid triggering SetStartupTask / SetStartupTask 중복 호출 방지
+                _isAutoStartAdminEnabled = isRegistered;
+                OnPropertyChanged(nameof(IsAutoStartAdminEnabled));
+            }
+        }
+        catch { /* Ignore startup task query failures */ }
+    }
+
     private void CleanupZombieMiners()
     {
         try
         {
             string minerDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Miners");
-            ProcessManager.KillProcessByPath("xmrig", minerDir);
-            ProcessManager.KillProcessByPath("rigel", minerDir);
+            if (XmrigMiner?.Status != "Running")
+            {
+                ProcessManager.KillProcessByPath("xmrig", minerDir);
+            }
+            if (RigelMiner?.Status != "Running")
+            {
+                ProcessManager.KillProcessByPath("rigel", minerDir);
+            }
         }
         catch { /* Ignore */ }
     }

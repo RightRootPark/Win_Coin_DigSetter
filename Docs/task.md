@@ -108,3 +108,7 @@
     - [x] `DetectNvidiaGpus()`로 전체 NVIDIA GPU(인덱스·모델·VRAM) 수집 및 2GB 이하 혼재 시 `-d` 자동 필터링
     - [x] GPU별 `small-lut` (`on,off` 등) 및 `--multi-device-arg-mode first` 자동 적용
     - [x] `MinerViewModel.cs`에 `Multi-GPU Arg Mode` 옵션 추가 및 `NexaPow Small LUT` 값 입력형 확장
+- [x] 성능 개선: 앱 기동 속도 개선 (비동기 초기화) (2026-11-25) <!-- id: 31 -->
+    - [x] `MainViewModel.cs` 생성자 내 `AdminHelper.IsStartupTaskRegistered()` (`schtasks.exe`) 및 `CleanupZombieMiners()` 동기 블로킹 제거 후 백그라운드 비동기화
+    - [x] 백킹 필드 직접 갱신 + `_isAutoStartAdminTouched` 플래그로 불필요한 작업 스케줄러 재등록 및 경합 방지
+    - [x] `IsAdmin` 프로퍼티 1회 캐싱 적용
