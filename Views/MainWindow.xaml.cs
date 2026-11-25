@@ -74,11 +74,22 @@ public partial class MainWindow : Window
 
         if (DataContext is MainViewModel vm)
         {
+            vm.XmrigMiner.AlertRaised += ShowMinerAlert;
+            vm.RigelMiner.AlertRaised += ShowMinerAlert;
+
             // Safety Check: If icon failed to initialize properly (null icon handle), don't hide window
             if (vm.IsStartInTrayEnabled && _notifyIcon?.Icon != null)
             {
                 HideToTray();
             }
+        }
+    }
+
+    private void ShowMinerAlert(string title, string message)
+    {
+        if (_notifyIcon != null && _notifyIcon.Visible)
+        {
+            _notifyIcon.ShowBalloonTip(5000, title, message, WinForms.ToolTipIcon.Warning);
         }
     }
 
@@ -132,6 +143,11 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.XmrigMiner.AlertRaised -= ShowMinerAlert;
+            vm.RigelMiner.AlertRaised -= ShowMinerAlert;
+        }
         _notifyIcon?.Dispose();
         base.OnClosed(e);
     }

@@ -37,9 +37,16 @@ public class MinerViewModel : INotifyPropertyChanged
 {
     private readonly ProcessManager _processManager;
     private string _status = "Stopped";
-    private string _latestLog = "";
     private string _copyButtonText = "COPY";
+    private string _healthStatus = "Idle";
+    private DateTime? _miningStartedAt;
+    private DateTime? _lastAcceptedAt;
+    private DateTime? _lastCrashAt;
+    private int _consecutiveConnectionErrors;
+    private bool _healthAlertRaised;
     private const long MaxXmrigLogBytes = 10L * 1024 * 1024; // 10 MB (bytes)
+
+    public event Action<string, string>? AlertRaised;
     
     // [Korea] UI 최적화: 로그 버퍼링 (ConcurrentQueue & Timer)
     // 1. Process -> Queue (빠름)
@@ -59,6 +66,25 @@ public class MinerViewModel : INotifyPropertyChanged
         set { _status = value; OnPropertyChanged(); }
     }
 
+    public string HealthStatus
+    {
+        get => _healthStatus;
+        private set
+        {
+            if (_healthStatus != value)
+            {
+                _healthStatus = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HasHealthWarning));
+            }
+        }
+    }
+
+    public bool HasHealthWarning => HealthStatus is "Pool Error" or "No Share" or "Crashed";
+
+    // Prevent tight crash-restart loops / 크래시 직후 무한 재시작 방지를 위한 30초 쿨다운
+    public bool CanAutoRestart => _lastCrashAt == null || (DateTime.UtcNow - _lastCrashAt.Value) >= TimeSpan.FromSeconds(30);
+
     public string CopyButtonText
     {
         get => _copyButtonText;
@@ -68,11 +94,14 @@ public class MinerViewModel : INotifyPropertyChanged
     public ICommand StartCommand { get; }
     public ICommand StopCommand { get; }
     public ICommand CopyLogsCommand { get; }
+    public ICommand ClearLogsCommand { get; }
+    public ICommand OpenLogFolderCommand { get; }
 
     public MinerViewModel(MinerConfig config)
     {
         Config = config;
         _processManager = new ProcessManager(OnLogReceived);
+        _processManager.ProcessExited += OnProcessUnexpectedExit;
 
         // [Korea] Log Throttling Timer (5 FPS)
         _logUpdateTimer = new DispatcherTimer
@@ -95,6 +124,8 @@ public class MinerViewModel : INotifyPropertyChanged
         StartCommand = new RelayCommand(_ => Start(), _ => !_processManager.IsRunning && Config.Enabled);
         StopCommand = new RelayCommand(_ => Stop(), _ => _processManager.IsRunning);
         CopyLogsCommand = new RelayCommand(_ => CopyLogs());
+        ClearLogsCommand = new RelayCommand(_ => Logs.Clear());
+        OpenLogFolderCommand = new RelayCommand(_ => OpenLogFolder());
     }
 
     // Copy all buffered miner logs to clipboard / 클립보드로 현재 로그 전체 복사
@@ -115,9 +146,39 @@ public class MinerViewModel : INotifyPropertyChanged
         }
     }
 
+    private void OpenLogFolder()
+    {
+        try
+        {
+            string? dir = Path.GetDirectoryName(Config.ExecutablePath);
+            if (string.IsNullOrWhiteSpace(dir) || !Directory.Exists(dir))
+            {
+                dir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Miners");
+            }
+            if (Directory.Exists(dir))
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", dir)
+                {
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logQueue.Enqueue($"[Warning] Failed to open log folder: {ex.Message}");
+        }
+    }
+
     private void Start()
     {
         Status = "Running";
+        _miningStartedAt = DateTime.UtcNow;
+        _lastAcceptedAt = null;
+        _lastCrashAt = null;
+        _consecutiveConnectionErrors = 0;
+        _healthAlertRaised = false;
+        HealthStatus = "Starting";
+
         string args = BuildArguments();
         if (Config.Type == MinerType.XMRig)
         {
@@ -175,6 +236,11 @@ public class MinerViewModel : INotifyPropertyChanged
         }
         catch { /* Ignore */ }
 
+        _miningStartedAt = null;
+        _lastAcceptedAt = null;
+        _consecutiveConnectionErrors = 0;
+        _healthAlertRaised = false;
+        HealthStatus = "Idle";
         Status = "Stopped";
     }
 
@@ -200,6 +266,21 @@ public class MinerViewModel : INotifyPropertyChanged
         return args;
     }
 
+    private void OnProcessUnexpectedExit(int exitCode)
+    {
+        var app = System.Windows.Application.Current;
+        if (app == null) return;
+
+        app.Dispatcher.BeginInvoke(() =>
+        {
+            Status = "Stopped";
+            HealthStatus = "Crashed";
+            _lastCrashAt = DateTime.UtcNow;
+            CommandManager.InvalidateRequerySuggested();
+            AlertRaised?.Invoke($"{Config.Name} Crashed", $"ExitCode {exitCode}로 비정상 종료됨. 30초 후 자동 복구를 시도함.");
+        });
+    }
+
     private void OnLogReceived(string message)
     {
         // 최적화: 즉시 UI 갱신하지 않고 큐에 적재 (매우 빠름)
@@ -219,7 +300,53 @@ public class MinerViewModel : INotifyPropertyChanged
             {
                 if (Logs.Count > 1000) Logs.RemoveAt(0);
                 Logs.Add(log);
+                InspectLogLine(log);
                 processedCount++;
+            }
+        }
+    }
+
+    private void InspectLogLine(string line)
+    {
+        if (line.Contains("accepted", StringComparison.OrdinalIgnoreCase))
+        {
+            _lastAcceptedAt = DateTime.UtcNow;
+            _consecutiveConnectionErrors = 0;
+            _healthAlertRaised = false;
+            if (Status == "Running") HealthStatus = "Healthy";
+            return;
+        }
+
+        if (line.Contains("connection error", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("connect error", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("read error", StringComparison.OrdinalIgnoreCase) ||
+            line.Contains("DNS error", StringComparison.OrdinalIgnoreCase))
+        {
+            _consecutiveConnectionErrors++;
+            if (_consecutiveConnectionErrors >= 10)
+            {
+                HealthStatus = "Pool Error";
+                if (!_healthAlertRaised)
+                {
+                    _healthAlertRaised = true;
+                    AlertRaised?.Invoke($"{Config.Name} Pool Error", "풀 연결 오류가 10회 이상 반복되고 있음. 풀/알고리즘 상태를 확인하세요.");
+                }
+            }
+        }
+    }
+
+    public void EvaluateHealth()
+    {
+        if (Status != "Running" || HealthStatus == "Pool Error") return;
+
+        DateTime? baseline = _lastAcceptedAt ?? _miningStartedAt;
+        if (baseline != null && (DateTime.UtcNow - baseline.Value) >= TimeSpan.FromMinutes(30))
+        {
+            HealthStatus = "No Share";
+            if (!_healthAlertRaised)
+            {
+                _healthAlertRaised = true;
+                AlertRaised?.Invoke($"{Config.Name} No Share", "30분 이상 Accepted Share가 없음. 풀 상태를 확인하세요.");
             }
         }
     }

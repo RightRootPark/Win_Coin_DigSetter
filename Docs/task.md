@@ -86,3 +86,9 @@
     - [x] `AutoScrollBehavior.cs`에 읽기 전용 `TextBox`용 `LogItemsSource` 증분 동기화 및 선택·스크롤 보존 로직 추가
     - [x] `MinerViewModel.cs`에 `CopyLogsCommand` 및 `CopyButtonText` 추가
     - [x] `MainWindow.xaml` XMRig/Rigel 로그 뷰어를 `TextBox`로 교체 및 `COPY` 버튼 배치
+- [x] 종합 개선: 채굴 효율·안정성·대시보드 편의기능 통합 (2026-11-25) <!-- id: 26 -->
+    - [x] GPU 온도 상한 `tc[80-90]`·`--fan-control 100` 적용 및 운영 `settings.json` 갱신
+    - [x] `AdminHelper.cs` 관리자 권한 재시작·작업 스케줄러 자동 시작 등록 기능 추가
+    - [x] `ProcessManager.cs`/`MinerViewModel.cs` 크래시 감지·30초 자동 복구 및 풀 오류/30분 No Share 감시·트레이 알림 추가
+    - [x] `UnmineableService.cs` 기반 Dashboard 잔고/출금 진행률/온라인 워커 표시 추가
+    - [x] Monitoring 탭 `CLEAR`/`OPEN LOG` 버튼, 동적 Idle 안내 문구, 빌드 경고(CS0414) 및 중복 알림 정리

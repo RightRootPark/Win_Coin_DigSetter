@@ -69,10 +69,67 @@ public class MainViewModel : INotifyPropertyChanged
             // Enforce minimum 5 seconds
             int val = value < 5 ? 5 : value;
             _keepAwakeInterval = val; 
-            OnPropertyChanged(); 
-            OnPropertyChanged(); 
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(KeepAwakeProgress));
         }
     }
+
+    // Admin & Elevated Startup / 관리자 권한 확인 및 작업 스케줄러 자동 시작
+    public bool IsAdmin => AdminHelper.IsRunningAsAdmin();
+    public bool IsNotAdmin => !IsAdmin;
+    public string AdminStatusText => IsAdmin
+        ? "Running as Administrator (MSR / GPU Fan Control Active)"
+        : "Standard User (Restart as Admin for MSR & GPU Fan Control)";
+
+    private bool _isAutoStartAdminEnabled;
+    public bool IsAutoStartAdminEnabled
+    {
+        get => _isAutoStartAdminEnabled;
+        set
+        {
+            if (_isAutoStartAdminEnabled == value) return;
+            var (success, message) = AdminHelper.SetStartupTask(value);
+            _isAutoStartAdminEnabled = AdminHelper.IsStartupTaskRegistered();
+            OnPropertyChanged();
+            if (!success)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to update Windows Startup Task: {message}",
+                    "Admin Startup",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+    }
+
+    public ICommand RestartAsAdminCommand { get; }
+
+    // unMineable Balance Monitoring / unMineable 잔고 및 출금 진행률 조회
+    private readonly System.Windows.Threading.DispatcherTimer _unmineableTimer;
+    private int _healthTickCounter;
+    private bool _isRefreshingUnmineable;
+    private string _unmineableBalanceText = "Loading...";
+    public string UnmineableBalanceText
+    {
+        get => _unmineableBalanceText;
+        private set { _unmineableBalanceText = value; OnPropertyChanged(); }
+    }
+
+    private string _unmineableMetaText = "Checking unMineable API...";
+    public string UnmineableMetaText
+    {
+        get => _unmineableMetaText;
+        private set { _unmineableMetaText = value; OnPropertyChanged(); }
+    }
+
+    private double _unmineableProgress;
+    public double UnmineableProgress
+    {
+        get => _unmineableProgress;
+        private set { _unmineableProgress = value; OnPropertyChanged(); }
+    }
+
+    public ICommand RefreshUnmineableCommand { get; }
 
     // Configurable Idle Delay
     private int _idleMiningStartDelay = 60;
@@ -171,6 +228,9 @@ public class MainViewModel : INotifyPropertyChanged
         AutoConfigCommand = new RelayCommand(_ => AutoConfigure());
         ResetConfigCommand = new RelayCommand(_ => ResetToBatchDefaults());
         EnterStealthModeCommand = new RelayCommand(_ => IsStealthMode = true);
+        RestartAsAdminCommand = new RelayCommand(_ => RestartAsAdmin());
+        RefreshUnmineableCommand = new RelayCommand(_ => _ = RefreshUnmineableStatsAsync());
+        _isAutoStartAdminEnabled = AdminHelper.IsStartupTaskRegistered();
         
         var config = LoadConfig();
 
@@ -190,11 +250,75 @@ public class MainViewModel : INotifyPropertyChanged
         _idleTimer.Tick += IdleTimer_Tick;
         _idleTimer.Start();
 
-        // Subscribe to miner status changes for Stealth Status
-        XmrigMiner.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(MinerViewModel.Status)) UpdateStealthStatus(); };
-        RigelMiner.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(MinerViewModel.Status)) UpdateStealthStatus(); };
+        // unMineable Stats Timer (5 min)
+        _unmineableTimer = new System.Windows.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromMinutes(5)
+        };
+        _unmineableTimer.Tick += (_, _) => _ = RefreshUnmineableStatsAsync();
+        _unmineableTimer.Start();
+        _ = RefreshUnmineableStatsAsync();
+
+        // Subscribe to miner status and health changes for Stealth Status
+        XmrigMiner.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(MinerViewModel.Status) or nameof(MinerViewModel.HealthStatus)) UpdateStealthStatus();
+        };
+        RigelMiner.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName is nameof(MinerViewModel.Status) or nameof(MinerViewModel.HealthStatus)) UpdateStealthStatus();
+        };
         
         UpdateStealthStatus(); // Initial state
+    }
+
+    private void RestartAsAdmin()
+    {
+        Cleanup();
+        if (AdminHelper.RestartAsAdmin())
+        {
+            System.Windows.Application.Current.Shutdown();
+        }
+        else
+        {
+            _idleTimer.Start();
+            _unmineableTimer.Start();
+        }
+    }
+
+    private async Task RefreshUnmineableStatsAsync()
+    {
+        if (_isRefreshingUnmineable) return;
+        _isRefreshingUnmineable = true;
+
+        try
+        {
+            string coin = string.Empty;
+            string address = string.Empty;
+            if (!UnmineableService.TryParseWallet(XmrigMiner.Config.WalletAddress, out coin, out address) &&
+                !UnmineableService.TryParseWallet(RigelMiner.Config.WalletAddress, out coin, out address))
+            {
+                UnmineableBalanceText = "Wallet not configured";
+                UnmineableMetaText = "Set COIN:ADDRESS format in Settings";
+                UnmineableProgress = 0;
+                return;
+            }
+
+            var stats = await UnmineableService.FetchStatsAsync(coin, address);
+            if (stats == null)
+            {
+                UnmineableMetaText = $"API fetch failed ({DateTime.Now:HH:mm:ss})";
+                return;
+            }
+
+            UnmineableBalanceText = $"{stats.Balance:F6} / {stats.PaymentThreshold:0.##} {stats.Coin}";
+            UnmineableProgress = stats.ProgressPercent;
+            UnmineableMetaText = $"{stats.ProgressPercent:F1}%  |  Online Workers: {stats.OnlineWorkers}  |  Updated: {stats.UpdatedAt:HH:mm:ss}";
+        }
+        finally
+        {
+            _isRefreshingUnmineable = false;
+        }
     }
 
     private void CleanupZombieMiners()
@@ -220,15 +344,25 @@ public class MainViewModel : INotifyPropertyChanged
     {
         bool isC = XmrigMiner.Status == "Running";
         bool isG = RigelMiner.Status == "Running";
+        bool hasWarn = XmrigMiner.HasHealthWarning || RigelMiner.HasHealthWarning;
+        string warnSuffix = hasWarn ? " (!)" : string.Empty;
 
-        if (isC && isG) StealthStatusText = "Status: Run C+G";
-        else if (isC) StealthStatusText = "Status: Run C";
-        else if (isG) StealthStatusText = "Status: Run G";
-        else StealthStatusText = "Status: Idle";
+        if (isC && isG) StealthStatusText = $"Status: Run C+G{warnSuffix}";
+        else if (isC) StealthStatusText = $"Status: Run C{warnSuffix}";
+        else if (isG) StealthStatusText = $"Status: Run G{warnSuffix}";
+        else StealthStatusText = $"Status: Idle{warnSuffix}";
     }
 
     private void IdleTimer_Tick(object? sender, EventArgs e)
     {
+        _healthTickCounter++;
+        if (_healthTickCounter >= 10)
+        {
+            _healthTickCounter = 0;
+            XmrigMiner.EvaluateHealth();
+            RigelMiner.EvaluateHealth();
+        }
+
         if (!IsIdleMiningEnabled && !IsKeepAwakeEnabled)
         {
             CurrentIdleSeconds = 0;
@@ -273,8 +407,8 @@ public class MainViewModel : INotifyPropertyChanged
 
             if (CurrentIdleSeconds >= StartThreshold)
             {
-                if (XmrigMiner.Status == "Stopped" && XmrigMiner.Config.Enabled) XmrigMiner.StartCommand.Execute(null);
-                if (RigelMiner.Status == "Stopped" && RigelMiner.Config.Enabled) RigelMiner.StartCommand.Execute(null);
+                if (XmrigMiner.Status == "Stopped" && XmrigMiner.Config.Enabled && XmrigMiner.CanAutoRestart) XmrigMiner.StartCommand.Execute(null);
+                if (RigelMiner.Status == "Stopped" && RigelMiner.Config.Enabled && RigelMiner.CanAutoRestart) RigelMiner.StartCommand.Execute(null);
             }
             else if (CurrentIdleSeconds < StopThreshold)
             {
@@ -461,11 +595,11 @@ public class MainViewModel : INotifyPropertyChanged
             XmrigMiner.Config.ExtraArguments = "--cpu-priority 0 --huge-pages-jit --randomx-mode=fast --randomx-wrmsr --randomx-rdmsr --print-time=60 --keepalive=true";
             XmrigMiner.Config.Enabled = true;
 
-            // Rigel Defaults (Updated to NexaPow on 2026-11-24: unMineable XelisHash/KarlsenHash delisted / XelisHash·KarlsenHash 풀 폐지로 교체)
+            // Rigel Defaults (Updated with tc[80-90] and --fan-control 100 per user confirmation on 2026-11-25)
             RigelMiner.Config.Algorithm = "nexapow";
             RigelMiner.Config.PoolUrl = "stratum+ssl://nexapow-asia.unmineable.com:443";
             RigelMiner.Config.WalletAddress = "ALGO:Y3NPRE7TTC4G2HNKCOTMH5YRVB2OXOWLA4GJYWNGHTNKD7FYMJJL7MJSNA.unmineable_worker_dft_DT_GPU"; 
-            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[60-70]tm[105-115] --nexapow-small-lut on";
+            RigelMiner.Config.ExtraArguments = "--no-strict-ssl --no-tui --stats-interval 60 --temp-limit tc[80-90]tm[105-115] --fan-control 100 --nexapow-small-lut on";
             RigelMiner.Config.Enabled = true;
 
             // 2. Try to find and apply local batch file settings (Override if exists)
@@ -596,6 +730,7 @@ public class MainViewModel : INotifyPropertyChanged
     public void Cleanup()
     {
         _idleTimer.Stop();
+        _unmineableTimer.Stop();
         
         if (XmrigMiner.Status == "Running") XmrigMiner.StopCommand.Execute(null);
         if (RigelMiner.Status == "Running") RigelMiner.StopCommand.Execute(null);

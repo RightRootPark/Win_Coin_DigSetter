@@ -9,6 +9,9 @@ public class ProcessManager
 {
     private Process? _process;
     private readonly Action<string> _logCallback;
+    private bool _isManualStop;
+
+    public event Action<int>? ProcessExited;
 
     public bool IsRunning => _process != null && !_process.HasExited;
 
@@ -29,6 +32,7 @@ public class ProcessManager
 
         try
         {
+            _isManualStop = false;
             var startInfo = new ProcessStartInfo
             {
                 FileName = executablePath,
@@ -40,10 +44,11 @@ public class ProcessManager
                 WorkingDirectory = Path.GetDirectoryName(executablePath) ?? string.Empty
             };
 
-            _process = new Process { StartInfo = startInfo };
+            _process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
             
             _process.OutputDataReceived += (s, e) => { if (e.Data != null) _logCallback?.Invoke(e.Data); };
             _process.ErrorDataReceived += (s, e) => { if (e.Data != null) _logCallback?.Invoke($"[Error] {e.Data}"); };
+            _process.Exited += OnProcessExited;
 
             _process.Start();
             _process.BeginOutputReadLine();
@@ -57,12 +62,29 @@ public class ProcessManager
         }
     }
 
+    private void OnProcessExited(object? sender, EventArgs e)
+    {
+        int exitCode = -1;
+        try
+        {
+            if (sender is Process proc) exitCode = proc.ExitCode;
+        }
+        catch { /* Ignore if process handle is unavailable */ }
+
+        if (!_isManualStop)
+        {
+            _logCallback?.Invoke($"[Warning] Process exited unexpectedly (ExitCode: {exitCode}).");
+            ProcessExited?.Invoke(exitCode);
+        }
+    }
+
     public void Stop()
     {
         if (_process == null || _process.HasExited) return;
 
         try
         {
+            _isManualStop = true;
             _process.Kill(true); // Kill entire process tree
             _process.WaitForExit(3000);
             _process = null;

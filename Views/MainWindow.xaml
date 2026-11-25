@@ -32,101 +32,134 @@
                     </StackPanel>
                 </TabItem.Header>
                 
-                <Grid Margin="15">
-                    <StackPanel MaxWidth="800">
-                        <!-- Dashboard Header -->
-                        <Grid Margin="0,0,0,15">
-                            <TextBlock Text="Dashboard" Style="{StaticResource MaterialDesignHeadline4TextBlock}" VerticalAlignment="Center"/>
-                            <Button Content="Hide to Tray" 
-                                    HorizontalAlignment="Right" 
-                                    Style="{StaticResource MaterialDesignOutlinedButton}"
-                                    x:Name="BtnHideToTray" Click="BtnHideToTray_Click"
-                                    ToolTip="Minimizes the application to the system tray"/>
-                        </Grid>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="15">
+                        <StackPanel MaxWidth="800">
+                            <!-- Dashboard Header -->
+                            <Grid Margin="0,0,0,15">
+                                <TextBlock Text="Dashboard" Style="{StaticResource MaterialDesignHeadline4TextBlock}" VerticalAlignment="Center"/>
+                                <Button Content="Hide to Tray" 
+                                        HorizontalAlignment="Right" 
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        x:Name="BtnHideToTray" Click="BtnHideToTray_Click"
+                                        ToolTip="Minimizes the application to the system tray"/>
+                            </Grid>
 
-                        <!-- Summary Cards -->
-                        <Grid Margin="0,0,0,15">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="15"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                            <!-- Summary Cards -->
+                            <Grid Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="15"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- XMRig Status Card -->
-                            <materialDesign:Card Grid.Column="0" Padding="15" UniformCornerRadius="10">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Cpu64Bit" Width="50" Height="50" Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,5"/>
-                                    <TextBlock Text="XMRig (CPU)" Style="{StaticResource MaterialDesignHeadline6TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                                    <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10,2">
-                                        <TextBlock Text="{Binding XmrigMiner.Status}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
-                                    </Border>
-                                </StackPanel>
-                            </materialDesign:Card>
-
-                            <!-- Rigel Status Card -->
-                            <materialDesign:Card Grid.Column="2" Padding="15" UniformCornerRadius="10">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Gpu" Width="50" Height="50" Foreground="{DynamicResource SecondaryHueMidBrush}" Margin="0,0,0,5"/>
-                                    <TextBlock Text="Rigel (GPU)" Style="{StaticResource MaterialDesignHeadline6TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
-                                    <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10,2">
-                                        <TextBlock Text="{Binding RigelMiner.Status}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
-                                    </Border>
-                                </StackPanel>
-                            </materialDesign:Card>
-                        </Grid>
-
-                        <!-- Idle Monitor Section -->
-                        <materialDesign:Card Padding="20" UniformCornerRadius="10" Margin="0,0,0,15">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <materialDesign:PackIcon Kind="TimerSand" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Idle Monitor (For Mining)" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
-                                </StackPanel>
-                                
-                                <Grid Margin="0,0,0,5">
-                                    <TextBlock Text="Time until Idle Mining Starts" VerticalAlignment="Center" FontSize="12"/>
-                                    <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" FontSize="12">
-                                        <TextBlock.Text>
-                                            <MultiBinding StringFormat="{}{0:F0}s / {1}s">
-                                                <Binding Path="CurrentIdleSeconds"/>
-                                                <Binding Path="IdleMiningStartDelay"/>
-                                            </MultiBinding>
-                                        </TextBlock.Text>
-                                    </TextBlock>
-                                </Grid>
-                                
-                                <ProgressBar Value="{Binding IdleProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource SecondaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
-                                
-                                <TextBlock Text="* Mining starts automatically when the bar is full (no activity for 1 min)." 
-                                           Margin="0,5,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center" FontSize="11"/>
-                            </StackPanel>
-                        </materialDesign:Card>
-
-                        <!-- Keep Awake Monitor Section -->
-                        <materialDesign:Card Padding="20" UniformCornerRadius="10" Visibility="{Binding IsKeepAwakeEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <materialDesign:PackIcon Kind="Mouse" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="Keep Awake Monitor" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
-                                </StackPanel>
-
-                                <Grid Margin="0,0,0,5">
-                                    <TextBlock Text="Next Mouse Jiggle In" VerticalAlignment="Center" FontSize="12"/>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding TimeUntilNextJiggle, StringFormat={}{0:F0}s}" FontWeight="Bold" FontSize="12"/>
-                                        <TextBlock Text=" / " FontSize="12"/>
-                                        <TextBlock Text="{Binding KeepAwakeInterval, StringFormat={}{0}s}" FontWeight="Bold" FontSize="12"/>
+                                <!-- XMRig Status Card -->
+                                <materialDesign:Card Grid.Column="0" Padding="15" UniformCornerRadius="10">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Cpu64Bit" Width="50" Height="50" Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,5"/>
+                                        <TextBlock Text="XMRig (CPU)" Style="{StaticResource MaterialDesignHeadline6TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                        <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10,2" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding XmrigMiner.Status}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding XmrigMiner.HealthStatus, StringFormat=Health: {0}}" FontSize="11" Opacity="0.8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
                                     </StackPanel>
-                                </Grid>
+                                </materialDesign:Card>
 
-                                <ProgressBar Value="{Binding KeepAwakeProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource PrimaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
+                                <!-- Rigel Status Card -->
+                                <materialDesign:Card Grid.Column="2" Padding="15" UniformCornerRadius="10">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Gpu" Width="50" Height="50" Foreground="{DynamicResource SecondaryHueMidBrush}" Margin="0,0,0,5"/>
+                                        <TextBlock Text="Rigel (GPU)" Style="{StaticResource MaterialDesignHeadline6TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                        <Border Background="{DynamicResource MaterialDesignDivider}" CornerRadius="5" Padding="10,2" HorizontalAlignment="Center">
+                                            <TextBlock Text="{Binding RigelMiner.Status}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource SecondaryHueMidBrush}"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding RigelMiner.HealthStatus, StringFormat=Health: {0}}" FontSize="11" Opacity="0.8" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                                    </StackPanel>
+                                </materialDesign:Card>
+                            </Grid>
 
-                                <TextBlock Text="* Prevents sleep mode by simulating mouse movement." 
-                                           Margin="0,5,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center" FontSize="11"/>
-                            </StackPanel>
-                        </materialDesign:Card>
-                    </StackPanel>
-                </Grid>
+                            <!-- Idle Monitor Section -->
+                            <materialDesign:Card Padding="20" UniformCornerRadius="10" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <materialDesign:PackIcon Kind="TimerSand" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Text="Idle Monitor (For Mining)" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                                    </StackPanel>
+                                    
+                                    <Grid Margin="0,0,0,5">
+                                        <TextBlock Text="Time until Idle Mining Starts" VerticalAlignment="Center" FontSize="12"/>
+                                        <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" FontSize="12">
+                                            <TextBlock.Text>
+                                                <MultiBinding StringFormat="{}{0:F0}s / {1}s">
+                                                    <Binding Path="CurrentIdleSeconds"/>
+                                                    <Binding Path="IdleMiningStartDelay"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </Grid>
+                                    
+                                    <ProgressBar Value="{Binding IdleProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource SecondaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
+                                    
+                                    <TextBlock Text="{Binding IdleMiningStartDelay, StringFormat=* Mining starts automatically when the bar is full (idle {0}s).}" 
+                                               Margin="0,5,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center" FontSize="11"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <!-- unMineable Payout Monitor Section -->
+                            <materialDesign:Card Padding="20" UniformCornerRadius="10" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="WalletOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <TextBlock Text="unMineable Balance" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <Button Content="REFRESH"
+                                                Command="{Binding RefreshUnmineableCommand}"
+                                                HorizontalAlignment="Right"
+                                                Height="26"
+                                                Padding="10,0"
+                                                FontSize="11"
+                                                Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,5">
+                                        <TextBlock Text="Current Balance / Payout Threshold" VerticalAlignment="Center" FontSize="12"/>
+                                        <TextBlock Text="{Binding UnmineableBalanceText}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="Bold" FontSize="12"/>
+                                    </Grid>
+
+                                    <ProgressBar Value="{Binding UnmineableProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource PrimaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
+
+                                    <TextBlock Text="{Binding UnmineableMetaText}"
+                                               Margin="0,5,0,0" Opacity="0.7" HorizontalAlignment="Center" FontSize="11"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+
+                            <!-- Keep Awake Monitor Section -->
+                            <materialDesign:Card Padding="20" UniformCornerRadius="10" Visibility="{Binding IsKeepAwakeEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <materialDesign:PackIcon Kind="Mouse" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Text="Keep Awake Monitor" Style="{StaticResource MaterialDesignSubtitle1TextBlock}"/>
+                                    </StackPanel>
+
+                                    <Grid Margin="0,0,0,5">
+                                        <TextBlock Text="Next Mouse Jiggle In" VerticalAlignment="Center" FontSize="12"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding TimeUntilNextJiggle, StringFormat={}{0:F0}s}" FontWeight="Bold" FontSize="12"/>
+                                            <TextBlock Text=" / " FontSize="12"/>
+                                            <TextBlock Text="{Binding KeepAwakeInterval, StringFormat={}{0}s}" FontWeight="Bold" FontSize="12"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <ProgressBar Value="{Binding KeepAwakeProgress, Mode=OneWay}" Height="15" Foreground="{DynamicResource PrimaryHueMidBrush}" Background="{DynamicResource MaterialDesignDivider}"/>
+
+                                    <TextBlock Text="* Prevents sleep mode by simulating mouse movement." 
+                                               Margin="0,5,0,0" Opacity="0.6" FontStyle="Italic" HorizontalAlignment="Center" FontSize="11"/>
+                                </StackPanel>
+                            </materialDesign:Card>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
             </TabItem>
 
             <!-- MONITORING TAB (MOVED) -->
@@ -190,11 +223,13 @@
                             </Border>
                             
                             <!-- Controls -->
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Command="{Binding XmrigMiner.StartCommand}" Content="START" Margin="0,0,10,0" Style="{StaticResource MaterialDesignRaisedButton}"/>
-                                <Button Command="{Binding XmrigMiner.StopCommand}" Content="STOP" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
-                                <Button Command="{Binding XmrigMiner.CopyLogsCommand}" Content="{Binding XmrigMiner.CopyButtonText}" Margin="10,0,0,0" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Copy all XMRig logs to clipboard"/>
-                            </StackPanel>
+                            <WrapPanel Grid.Row="3" HorizontalAlignment="Center">
+                                <Button Command="{Binding XmrigMiner.StartCommand}" Content="START" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                <Button Command="{Binding XmrigMiner.StopCommand}" Content="STOP" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
+                                <Button Command="{Binding XmrigMiner.CopyLogsCommand}" Content="{Binding XmrigMiner.CopyButtonText}" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Copy all XMRig logs to clipboard"/>
+                                <Button Command="{Binding XmrigMiner.ClearLogsCommand}" Content="CLEAR" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Clear log viewer buffer"/>
+                                <Button Command="{Binding XmrigMiner.OpenLogFolderCommand}" Content="OPEN LOG" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Open Miners log folder"/>
+                            </WrapPanel>
                         </Grid>
                     </materialDesign:Card>
                     
@@ -243,11 +278,13 @@
                             </Border>
 
                             <!-- Controls -->
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Command="{Binding RigelMiner.StartCommand}" Content="START" Margin="0,0,10,0" Style="{StaticResource MaterialDesignRaisedButton}"/>
-                                <Button Command="{Binding RigelMiner.StopCommand}" Content="STOP" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
-                                <Button Command="{Binding RigelMiner.CopyLogsCommand}" Content="{Binding RigelMiner.CopyButtonText}" Margin="10,0,0,0" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Copy all Rigel logs to clipboard"/>
-                            </StackPanel>
+                            <WrapPanel Grid.Row="3" HorizontalAlignment="Center">
+                                <Button Command="{Binding RigelMiner.StartCommand}" Content="START" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignRaisedButton}"/>
+                                <Button Command="{Binding RigelMiner.StopCommand}" Content="STOP" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="Red" BorderBrush="Red"/>
+                                <Button Command="{Binding RigelMiner.CopyLogsCommand}" Content="{Binding RigelMiner.CopyButtonText}" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Copy all Rigel logs to clipboard"/>
+                                <Button Command="{Binding RigelMiner.ClearLogsCommand}" Content="CLEAR" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Clear log viewer buffer"/>
+                                <Button Command="{Binding RigelMiner.OpenLogFolderCommand}" Content="OPEN LOG" Margin="4,2" Padding="10,4" FontSize="11" Style="{StaticResource MaterialDesignOutlinedButton}" ToolTip="Open Miners log folder"/>
+                            </WrapPanel>
                         </Grid>
                     </materialDesign:Card>
                 </Grid>
@@ -280,6 +317,26 @@
                                 <CheckBox Content="Start in Stealth Mode (Launch hidden, restore with 10 clicks)" 
                                           IsChecked="{Binding IsStartInStealthEnabled}"
                                           Margin="0,0,0,10"/>
+
+                                <CheckBox Content="Run at Windows Startup as Admin (Task Scheduler, no UAC prompt)"
+                                          IsChecked="{Binding IsAutoStartAdminEnabled}"
+                                          Margin="0,0,0,10"/>
+
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding AdminStatusText}" Grid.Column="0" VerticalAlignment="Center" FontSize="12" Opacity="0.85"/>
+                                    <Button Content="RESTART AS ADMIN"
+                                            Grid.Column="1"
+                                            Command="{Binding RestartAsAdminCommand}"
+                                            Visibility="{Binding IsNotAdmin, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                                            Height="28"
+                                            Padding="10,0"
+                                            FontSize="11"/>
+                                </Grid>
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                     <CheckBox Content="Enable Idle Mining (Start after" IsChecked="{Binding IsIdleMiningEnabled}" VerticalAlignment="Center"/>
