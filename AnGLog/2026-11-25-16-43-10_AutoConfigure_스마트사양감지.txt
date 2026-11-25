@@ -1,0 +1,29 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 16:40 ~ 16:43 KST
+- 작업 목표: `MainViewModel.AutoConfigure()`를 업그레이드하여 새 PC에 프로그램 복사 후 `AUTO DETECT & CONFIGURE` 버튼 1회 클릭만으로 사양별 최적화 설정이 완료되도록 개선(改善)
+- 작업 결과: 성공 (`dotnet build -c Release` 경고 0개·오류 0개, 퍼블리시 및 운영 폴더 배포·SHA-256 일치 검증 완료)
+- Commit ID: `95177c8` (코드·`task.md` 반영 커밋)
+
+2. 변경 내역 (Changes)
+- [뷰모델] `ViewModels/MainViewModel.cs`
+  * `ApplyFactoryDefaults(bool overwrite)` 헬퍼 추출: `AutoConfigure()`에서 비어 있는 알고리즘·풀·지갑·추가인자 필드를 자동 보완하고 `ResetToBatchDefaults()`와 중복 제거
+  * RAM 감지 및 모드 전환: `GC.GetGCMemoryInfo().TotalAvailableMemoryBytes` 기준으로 `6 GB` 미만이면 `--randomx-mode=light`, `6 GB` 이상이면 `--randomx-mode=fast` 자동 적용
+  * 워커명 정규화(`NormalizeWalletWorker`): `#레퍼럴`을 보존하면서 기존 워커명을 교체해 `.{MachineName}_CPU` / `.{MachineName}_GPU`가 중복 누적되지 않도록 정리
+  * NVIDIA GPU·VRAM 감지(`DetectNvidiaGpu`): `nvidia-smi`를 1순위로(WMI `uint32` 4GB 절단 회피), WMI를 fallback으로 사용해 미장착 또는 `< 2800 MiB` 시 `RigelMiner.Config.Enabled = false`, `2800~4500 MiB` 시 `Enabled = true` + `--nexapow-small-lut on`, `> 4500 MiB` 시 `Enabled = true` + `--nexapow-small-lut` 제거(`big LUT`)
+  * 결과 요약 `MessageBox`에 RAM/RandomX 모드, CPU 스레드 힌트, GPU/VRAM 및 Rigel 상태, 워커 요약 출력
+- [문서] `Docs/task.md` (`id: 27` 추가)
+- [빌드·퍼블리시·운영 배포]
+  * `dotnet build -c Release`: 경고 0개, 오류 0개
+  * `bin\Publish_win-x64\EncryptionMinerControl.exe`: `173,418,554 bytes`, SHA-256 `6C8ACA8FFCBCD9CE2F2811245F7F995C3774A9E9CB95ADB6426D7D1C5D024B56`
+  * `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe.bak_20261125_3` 백업 후 배포 (`HashMatch=True`), `settings.json` 및 `Miners\` 보존
+
+3. 결정 근거 (Rationale)
+- WMI `AdapterRAM`은 32비트 정수 한계로 6GB·8GB 카드도 ~4GB로 잘못 보고하므로 `nvidia-smi` CSV 조회를 우선하고 WMI를 보조 수단으로 둠.
+- 3GB 카드(`GTX 1060 3GB`)에서는 `--nexapow-small-lut on`이 필수이나 6GB+ 카드에서는 `big LUT`가 유리하므로 VRAM 구간별 분기(分岐)를 적용하고, 미지원 GPU 환경에서는 자동으로 Rigel을 비활성화해 타 PC 배포 편의성을 높임.
+
+4. 미해결 이슈 (Issues)
+- 타 사양 PC(4GB RAM, 2GB 이하 GPU, 6GB 이상 GPU) 실기기 버튼 테스트는 추후 해당 환경 배포 시 확인 필요.
+- 운영 폴더 내 백업 파일(`.bak_*`)은 정상 동작 확인 후 필요 시 정리 가능.
+
+5. 다음 단계 (Next Step)
+- 운영 폴더의 `EncryptionMinerControl.exe` 실행(관리자 권한 권장) 및 새 PC 배포 시 `AUTO DETECT & CONFIGURE` 버튼으로 원클릭 사양 맞춤 설정 확인.
