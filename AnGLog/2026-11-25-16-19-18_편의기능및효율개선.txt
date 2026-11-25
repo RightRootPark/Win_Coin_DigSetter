@@ -1,0 +1,44 @@
+1. 작업 요약 (Work Summary)
+- 작업 시간: 2026-11-25 16:00 ~ 16:20 KST
+- 작업 목표: 채굴 효율·안정성·UI 편의기능 개선 항목(1, 2, 3, 4, 6, 7번) 일괄 구현, 빌드·퍼블리시 및 운영 `settings.json` 갱신
+- 작업 결과: 성공 (`dotnet build -c Release` 경고 0개·오류 0개, 단일 실행 파일 퍼블리시 및 GitHub 반영 완료)
+- Commit ID: `9e3322f` (기능 구현 커밋)
+
+2. 변경 내역 (Changes)
+- [신규 서비스] `Services/AdminHelper.cs`
+  * 현재 관리자 권한 여부(`IsRunningAsAdmin`), UAC 상승 재시작(`RestartAsAdmin`), 작업 스케줄러(`EncryptionMinerControl_AutoStart`, `/RL HIGHEST /SC ONLOGON`) 조회·등록·해제 구현
+- [신규 서비스] `Services/UnmineableService.cs`
+  * unMineable v4 `/address` 및 `/account/{uuid}/workers` 공개 API 조회로 잔고, 출금 임계치 진행률(%), 온라인 워커 수 집계 구현
+- [서비스 보강] `Services/ProcessManager.cs`
+  * `EnableRaisingEvents = true`, `ProcessExited` 이벤트 추가 및 수동 `Stop()`과 비정상 크래시 구분
+- [뷰모델] `ViewModels/MinerViewModel.cs`
+  * 미사용 `_latestLog` 필드 제거(CS0414 경고 해소)
+  * 비정상 종료 시 `Status = "Stopped"`, `HealthStatus = "Crashed"`, 30초 재시작 쿨다운(`CanAutoRestart`) 및 `AlertRaised` 알림
+  * 로그 기반 연속 연결 오류 10회(`Pool Error`)·30분 이상 `accepted` 미수신(`No Share`) 감시 및 `EvaluateHealth()` 추가
+  * Monitoring 보조 커맨드 `ClearLogsCommand`, `OpenLogFolderCommand` 추가
+- [뷰모델] `ViewModels/MainViewModel.cs`
+  * `ResetToBatchDefaults()` 내 Rigel 기본값을 `--temp-limit tc[80-90]tm[105-115] --fan-control 100 --nexapow-small-lut on`으로 갱신
+  * 관리자 권한 상태/재시작/작업 스케줄러 자동 시작 프로퍼티·커맨드 연결
+  * unMineable 5분 주기 타이머 및 `RefreshUnmineableCommand` 추가, Stealth 경고 표기 `(!)` 및 10초 주기 헬스 평가·크래시 자동 복구 연동
+  * `KeepAwakeInterval` setter의 중복 `OnPropertyChanged()`를 `OnPropertyChanged(nameof(KeepAwakeProgress))`로 수정
+- [뷰] `Views/MainWindow.xaml`, `Views/MainWindow.xaml.cs`
+  * Dashboard `ScrollViewer` 래핑, 카드별 `HealthStatus` 표시, `unMineable Balance` 카드 추가, 동적 Idle 지연 문구 바인딩
+  * Monitoring 탭 `CLEAR`, `OPEN LOG` 버튼 추가
+  * Settings 탭 관리자 작업 스케줄러 체크박스, 현재 권한 상태 및 `RESTART AS ADMIN` 버튼 추가, 트레이 풍선 알림 연결
+- [배치·운영 설정]
+  * `unmineable-ALGO-nexapow-rigel.BAT`에 `tc[80-90]tm[105-115]`, `--fan-control 100` 반영
+  * `C:\DTshare\Utility\EncryptionMinerControl_Release260202\settings.json.bak_20261125_fan` 백업 후 운영 `settings.json`에 `tc[80-90]tm[105-115] --fan-control 100` 반영 및 JSON 검증
+- [빌드·퍼블리시]
+  * `dotnet build -c Release`: 경고 0개, 오류 0개
+  * `bin\Publish_win-x64\EncryptionMinerControl.exe`: `173,414,458 bytes`, SHA-256 `C4496FE6B47D65C0AC1CC0E3965C044AABAFF44A8998F8A172426A73E6DDA453`
+
+3. 결정 근거 (Rationale)
+- 오늘(`2026-11-25`) 6시간 40분 운영 로그에서 `overheated` 993회 발생(실효 해시 `5.37 MH/s`)으로 성능 손실이 큼을 확인하고, 사용자 확인에 따라 GPU 온도 상한 `tc[80-90]` 및 `--fan-control 100`을 적용함.
+- XMRig MSR 활성화 및 GPU 팬 제어를 위해 관리자 권한이 필요하나 매 실행 UAC 팝업 부담을 피하기 위해 작업 스케줄러(`/RL HIGHEST`) + 수동 `RESTART AS ADMIN` 방식을 채택함.
+
+4. 미해결 이슈 (Issues)
+- 운영 `.exe` 교체 보류: 작업 시점에 `EncryptionMinerControl.exe`(PID 31976), `rigel.exe`, `xmrig.exe`가 가동 중이었으므로 강제 종료 없이 `bin\Publish_win-x64\EncryptionMinerControl.exe`까지만 준비함.
+- 현재 가동 중인 앱은 이전 바이너리와 이전 `settings.json`을 메모리에 들고 있으므로 종료 후 `.exe` 교체 및 관리자 재실행이 필요함.
+
+5. 다음 단계 (Next Step)
+- 가동 중인 `EncryptionMinerControl.exe`를(Settings SAVE 누르지 않고) 종료한 뒤 `bin\Publish_win-x64\EncryptionMinerControl.exe`를 `C:\DTshare\Utility\EncryptionMinerControl_Release260202\EncryptionMinerControl.exe`로 교체(백업 후 복사)하고 관리자 권한으로 실행하여 팬 100%, MSR 적용 및 신규 UI 동작 확인.
